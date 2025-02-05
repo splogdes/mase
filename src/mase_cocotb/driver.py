@@ -22,7 +22,7 @@ class Driver:
             )
 
         # Create an independent coroutine which can send stuff
-        self._thread = cocotb.scheduler.add(self._send_thread())
+        self._thread = cocotb.scheduler.start_soon(self._send_thread())
 
     def kill(self):
         if self._thread:

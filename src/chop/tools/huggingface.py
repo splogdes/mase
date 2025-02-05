@@ -160,7 +160,7 @@ def get_trainer(
         train_dataset=tokenized_dataset["train"],
         eval_dataset=tokenized_dataset["test"],
         data_collator=DataCollatorWithPadding(tokenizer=tokenizer),
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         compute_metrics=metric_fn,
     )
 

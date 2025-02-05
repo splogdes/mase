@@ -60,10 +60,6 @@ def simulate(
                 "-Wno-fatal",
                 "-Wno-lint",
                 "-Wno-style",
-                "--trace-fst",
-                "--trace-structs",
-                "--trace-depth",
-                str(trace_depth),
             ]
         else:
             raise ValueError(f"Unrecognized simulator: {simulator}")
@@ -83,6 +79,7 @@ def simulate(
             hdl_toplevel="top",
             build_args=build_args,
             parameters=[],  # use default parameters,
+            waves=waves,
         )
 
         build_end = time.time()

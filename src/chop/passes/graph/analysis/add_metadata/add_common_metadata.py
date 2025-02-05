@@ -76,6 +76,8 @@ def graph_iterator_for_mase_ops(graph):
                 mase_op = "linear"
             elif isinstance(module, nn.ReLU):
                 mase_op = "relu"
+            elif isinstance(module, nn.Threshold):
+                mase_op = "threshold"
             elif isinstance(module, nn.SELU):
                 mase_op = "selu"
             elif isinstance(module, nn.Tanh):
@@ -224,34 +226,45 @@ def graph_iterator_for_metadata(
         args, kwargs = None, None
         if node.op == "placeholder":
             result = dummy_in[node.name]
-            analyse_fn = analyse_common_parameters_placeholder
+            node.meta["mase"] = analyse_common_parameters_placeholder(
+                node.meta["mase"], result, args, kwargs, add_value=add_value
+            )
         elif node.op == "get_attr":
             result = fetch_attr(model, node.target)
-            analyse_fn = analyse_common_parameters_attr
+            node.meta["mase"] = analyse_common_parameters_attr(
+                node.meta["mase"], result, args, kwargs, add_value=add_value
+            )
         elif node.op == "call_function":
             args = load_arg(node.args, env)
             kwargs = load_arg(node.kwargs, env)
             result = node.target(*args, **kwargs)
-            analyse_fn = analyse_common_parameters_function
+            node.meta["mase"] = analyse_common_parameters_function(
+                node.meta["mase"], result, args, kwargs, add_value=add_value
+            )
         elif node.op == "call_method":
             self_obj, *args = load_arg(node.args, env)
-            print(self_obj)
             kwargs = load_arg(node.kwargs, env)
             result = getattr(self_obj, node.target)(*args, **kwargs)
-            analyse_fn = analyse_common_parameters_method
+            node.meta["mase"] = analyse_common_parameters_method(
+                node.meta["mase"], result, args, kwargs, add_value=add_value
+            )
+            if add_value:
+                node.meta["mase"]["common"]["self"] = self_obj
         elif node.op == "call_module":
             args = load_arg(node.args, env)
             kwargs = load_arg(node.kwargs, env)
             result = modules[node.target](*args, **kwargs)
-            analyse_fn = analyse_common_parameters_module
+            node.meta["mase"] = analyse_common_parameters_module(
+                node.meta["mase"], result, args, kwargs, add_value=add_value
+            )
         elif node.op == "output":
-            analyse_fn = analyse_common_parameters_output
+            node.meta["mase"] = analyse_common_parameters_output(
+                node.meta["mase"], None, args, kwargs, add_value=add_value
+            )
         else:
             raise ValueError(f"Unknown node type: {node.op}")
 
-        node.meta["mase"] = analyse_fn(
-            node.meta["mase"], result, args, kwargs, add_value=add_value
-        )
+        env[node.name] = result
         env[node.name] = result
 
         # For call_method nodes, the input tensor is not kept in meta["common"]["args"]

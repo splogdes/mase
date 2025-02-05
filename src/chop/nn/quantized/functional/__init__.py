@@ -63,6 +63,7 @@ from .mult import (
     mult_binary,
     mult_ternary,
 )
+
 from .relu import (
     relu_block_fp,
     relu_block_log,
@@ -73,6 +74,18 @@ from .relu import (
     relu_minifloat_ieee,
     relu_binary,
     relu_ternary,
+)
+
+for . import (
+    threshold_block_fp,
+    threshold_block_log,
+    threshold_block_minifloat,
+    threshold_integer,
+    threshold_log,
+    threshold_minifloat_denorm,
+    threshold_minifloat_ieee,
+    threshold_binary,
+    threshold_ternary,
 )
 
 from .selu import (
@@ -213,6 +226,16 @@ quantized_func_map = {
     "relu_block_log": relu_block_log,
     "relu_binary": relu_binary,
     "relu_ternary": relu_ternary,
+    "threshold_block_minifloat": threshold_block_minifloat,
+    "threshold_integer": threshold_integer,
+    "threshold_fixed": threshold_integer,
+    "threshold_log": threshold_log,
+    "threshold_minifloat_ieee": threshold_minifloat_ieee,
+    "threshold_minifloat_denorm": threshold_minifloat_denorm,
+    "threshold_block_fp": threshold_block_fp,
+    "threshold_block_log": threshold_block_log,
+    "threshold_binary": threshold_binary,
+    "threshold_ternary": threshold_ternary,
     "selu_block_minifloat": selu_block_minifloat,
     "selu_integer": selu_integer,
     "selu_fixed": selu_integer,

@@ -109,7 +109,7 @@ class MaseMetadata:
         # The fx node of the module in the fx graph of the model
         self.node = node
         # layers that we have in RTL
-        self.internal_layers = {nn.Linear: "linear", nn.ReLU: "relu"}
+        self.internal_layers = {nn.Linear: "linear", nn.ReLU: "relu"} # Posibly where rtl layers are added
 
         self.parameters = {
             "common": {},
