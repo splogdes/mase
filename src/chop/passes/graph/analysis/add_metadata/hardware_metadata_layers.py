@@ -69,6 +69,14 @@ INTERNAL_COMP = {
             ],
         },
     ],
+    "threshold": [
+        {
+            "name": "fixed_threshold",
+            "dependence_files": [
+                "activation_layers/rtl/fixed_threshold.sv",
+            ],
+        },
+    ],
     "hardshrink": [
         {
             "name": "fixed_hardshrink",

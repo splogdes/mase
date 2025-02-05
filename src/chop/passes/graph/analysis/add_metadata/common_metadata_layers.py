@@ -537,6 +537,8 @@ def _annotate_arg_metadata(
     """
     ordered_func_data = [(k, v) for k, v in func_data.items()]
     meta["common"]["args"] = OrderedDict()
+    meta["common"]["params"] = OrderedDict()
+
     data_in_itr = 0
 
     arg_type, arg_precision = get_type_and_precision(meta)
@@ -571,6 +573,13 @@ def _annotate_arg_metadata(
                 meta["common"]["args"][f"data_in_{data_in_itr}"] = arg_meta
                 data_in_itr += 1
         # Unknown data_in type or config argument
+        elif ordered_func_data[i][1] == "config":
+            meta["common"]["params"][ordered_func_data[i][0]] = {
+                "type": type(x),
+                "precision": arg_precision,
+                "value": x,
+            }
+            
         else:
             # Don't increment the iterator for config arguments, but
             # preserve order in meta["common"]["args"]
@@ -605,9 +614,18 @@ def _annotate_arg_metadata(
                 arg_meta["value"] = v
             meta["common"]["args"][f"data_in_{data_in_itr}"] = arg_meta
             data_in_itr += 1
+            
         elif k == "inplace":
             # although inplace is marked as a config type, it is in fact just a boolean flag
             meta["common"]["args"][k] = v
+            
+        elif func_data[k] == "config":
+            meta["common"]["params"][k] = {
+                "type": type(v),
+                "precision": arg_precision,
+                "value": v,
+            }
+            
         else:
             # otherwise this must be a configuration parameter in meta
             # meta_kwargs[k] = v

@@ -84,6 +84,7 @@ def add_verilog_param(node):
 
     args = node.meta["mase"]["common"]["args"]
     results = node.meta["mase"]["common"]["results"]
+    params = node.meta["mase"]["common"]["params"]
     vp = node.meta["mase"]["hardware"]["verilog_param"]
     for arg, arg_info in args.items():
         if isinstance(arg_info, dict):
@@ -140,8 +141,12 @@ def add_verilog_param(node):
                     ][dim]
         else:
             vp[_cap(result)] = result_info
-
-
+            
+            
+        for param, param_info in params.items():
+            if isinstance(param_info, dict): vp[_cap(param + "_value")] = int(param_info["value"] * 2 ** param_info["precision"][1])
+                
+                
 def add_extra_verilog_param(node, graph: MaseGraph):
     """Adds extra verilog parameters based on the node module type."""
 

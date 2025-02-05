@@ -76,7 +76,7 @@ from .relu import (
     relu_ternary,
 )
 
-for . import (
+from .threshold import (
     threshold_block_fp,
     threshold_block_log,
     threshold_block_minifloat,

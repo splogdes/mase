@@ -50,6 +50,16 @@ def update_arg(node, arg_name, dtype=None, precision=None, size=None):
         ] = precision
     if size is not None:
         node.meta["mase"].parameters["common"]["args"][arg_name]["size"] = size
+        
+def update_param(node, param_name, dtype=None, precision=None, size=None):
+    if dtype is not None:
+        node.meta["mase"].parameters["common"]["params"][param_name]["type"] = dtype
+    if precision is not None:
+        node.meta["mase"].parameters["common"]["params"][param_name][
+            "precision"
+        ] = precision
+    if size is not None:
+        node.meta["mase"].parameters["common"]["params"][param_name]["size"] = size
 
 
 MASE_OP_TO_INPUT_ENTRIES_AND_ARGS = {
@@ -62,6 +72,7 @@ MASE_OP_TO_INPUT_ENTRIES_AND_ARGS = {
     "mul": (("data_in", "data_in"), ("data_in_0", "data_in_1")),
     "linear": (("data_in", "weight", "bias"), ("data_in_0", "weight", "bias")),
     "relu": (("data_in",), ("data_in_0",)),
+    "threshold": (("data_in",), ("data_in_0",)),
     "selu": (("data_in",), ("data_in_0",)),
     "tanh": (("data_in",), ("data_in_0",)),
     "gelu": (("data_in",), ("data_in_0",)),
@@ -77,6 +88,10 @@ MASE_OP_TO_INPUT_ENTRIES_AND_ARGS = {
         ("data_in", "weight", "bias"),
         ("data_in_0", "weight", "bias"),
     ),
+}
+
+MASE_OP_TO_PARAM_ENTRIES_AND_ARGS = {
+    "threshold": ("threshold", "value"),
 }
 
 
@@ -101,6 +116,7 @@ MASE_OP_TO_OUTPUT_ENTRIES = {
     "mul": (("data_out",), ("data_out_0",)),
     "linear": (("data_out",), ("data_out_0",)),
     "relu": (("data_out",), ("data_out_0",)),
+    "threshold": (("data_out",), ("data_out_0",)),
     "selu": (("data_out",), ("data_out_0",)),
     "tanh": (("data_out",), ("data_out_0",)),
     "gelu": (("data_out",), ("data_out_0",)),
@@ -119,6 +135,8 @@ MASE_OP_TO_OUTPUT_ENTRIES = {
 def arg_exists(node, arg_name) -> bool:
     return arg_name in node.meta["mase"].parameters["common"]["args"]
 
+def param_exists(node, param_name) -> bool:
+    return param_name in node.meta["mase"].parameters["common"]["params"]
 
 def update_quant_meta_param(node, config: dict, mase_op: str) -> None:
     quant_arith = config["name"]
@@ -152,6 +170,18 @@ def update_quant_meta_param(node, config: dict, mase_op: str) -> None:
                 output_name=arg,
                 dtype="binary",
                 precision=[32, 0, 1],  # [bitwidth, stochastic, bipolar]
+            )
+    
+    # Probably need to update this to be more generic
+    if mase_op in MASE_OP_TO_PARAM_ENTRIES_AND_ARGS:
+        for param in MASE_OP_TO_PARAM_ENTRIES_AND_ARGS[mase_op]:
+            if not param_exists(node, param):
+                continue
+            update_param(
+                node,
+                param_name=param,
+                dtype=quant_arith,
+                precision=quant_arith_to_list_fn[quant_arith](config, "data_in"),
             )
 
 
