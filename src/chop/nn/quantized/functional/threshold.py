@@ -16,23 +16,19 @@ from chop.nn.quantizers import (
 )
 
 
-def threshold_integer(x, inplace=False, config=None):
+def threshold_integer(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
-        x_width, x_frac_width = config["data_in_width"], config["data_in_frac_width"]
+        x_width = config["data_in_width"]
+        x_frac_width = config["data_in_frac_width"]
         x_quantizer = partial(integer_quantizer, width=x_width, frac_width=x_frac_width, is_signed=False)
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_binary(x, inplace=False, config=None):
-    # (Note: the binary quantizer is not mathematically justified but is provided for completeness.)
+def threshold_binary(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -42,10 +38,8 @@ def threshold_binary(x, inplace=False, config=None):
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_ternary(x, inplace=False, config=None):
+def threshold_ternary(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -54,10 +48,8 @@ def threshold_ternary(x, inplace=False, config=None):
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_minifloat_denorm(x, inplace=False, config=None):
+def threshold_minifloat_denorm(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -71,10 +63,8 @@ def threshold_minifloat_denorm(x, inplace=False, config=None):
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_minifloat_ieee(x, inplace=False, config=None):
+def threshold_minifloat_ieee(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -88,10 +78,8 @@ def threshold_minifloat_ieee(x, inplace=False, config=None):
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_log(x, inplace=False, config=None):
+def threshold_log(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -103,10 +91,8 @@ def threshold_log(x, inplace=False, config=None):
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 
-def threshold_block_fp(x, inplace=False, config=None):
+def threshold_block_fp(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -130,10 +116,8 @@ def threshold_block_fp(x, inplace=False, config=None):
         return F.threshold(x, thr, val, inplace=inplace)
 
 
-def threshold_block_minifloat(x, inplace=False, config=None):
+def threshold_block_minifloat(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
@@ -157,10 +141,8 @@ def threshold_block_minifloat(x, inplace=False, config=None):
         return F.threshold(x, thr, val, inplace=inplace)
 
 
-def threshold_block_log(x, inplace=False, config=None):
+def threshold_block_log(x, thr, val, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    thr = config["threshold"]
-    val = config["value"]
     if bypass:
         return F.threshold(x, thr, val, inplace=inplace)
     else:
