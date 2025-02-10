@@ -76,6 +76,18 @@ from .relu import (
     relu_ternary,
 )
 
+from .leaky_relu import (
+    leaky_relu_block_fp,
+    leaky_relu_block_log,
+    leaky_relu_block_minifloat,
+    leaky_relu_integer,
+    leaky_relu_log,
+    leaky_relu_minifloat_denorm,
+    leaky_relu_minifloat_ieee,
+    leaky_relu_binary,
+    leaky_relu_ternary,
+)
+
 from .threshold import (
     threshold_block_fp,
     threshold_block_log,
@@ -226,6 +238,16 @@ quantized_func_map = {
     "relu_block_log": relu_block_log,
     "relu_binary": relu_binary,
     "relu_ternary": relu_ternary,
+    "leaky_relu_block_minifloat": leaky_relu_block_minifloat,
+    "leaky_relu_integer": leaky_relu_integer,
+    "leaky_relu_fixed": leaky_relu_integer,
+    "leaky_relu_log": leaky_relu_log,
+    "leaky_relu_minifloat_ieee": leaky_relu_minifloat_ieee,
+    "leaky_relu_minifloat_denorm": leaky_relu_minifloat_denorm,
+    "leaky_relu_block_fp": leaky_relu_block_fp,
+    "leaky_relu_block_log": leaky_relu_block_log,
+    "leaky_relu_binary": leaky_relu_binary,
+    "leaky_relu_ternary": leaky_relu_ternary,
     "threshold_block_minifloat": threshold_block_minifloat,
     "threshold_integer": threshold_integer,
     "threshold_fixed": threshold_integer,

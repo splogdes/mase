@@ -72,6 +72,7 @@ MASE_OP_TO_INPUT_ENTRIES_AND_ARGS = {
     "mul": (("data_in", "data_in"), ("data_in_0", "data_in_1")),
     "linear": (("data_in", "weight", "bias"), ("data_in_0", "weight", "bias")),
     "relu": (("data_in",), ("data_in_0",)),
+    "leaky_relu": (("data_in",), ("data_in_0",)),
     "threshold": (("data_in",), ("data_in_0",)),
     "selu": (("data_in",), ("data_in_0",)),
     "tanh": (("data_in",), ("data_in_0",)),
@@ -92,6 +93,7 @@ MASE_OP_TO_INPUT_ENTRIES_AND_ARGS = {
 
 MASE_OP_TO_PARAM_ENTRIES_AND_ARGS = {
     "threshold": ("threshold", "value"),
+    "leaky_relu": ("negative_slope",),
 }
 
 
@@ -116,6 +118,7 @@ MASE_OP_TO_OUTPUT_ENTRIES = {
     "mul": (("data_out",), ("data_out_0",)),
     "linear": (("data_out",), ("data_out_0",)),
     "relu": (("data_out",), ("data_out_0",)),
+    "leaky_relu": (("data_out",), ("data_out_0",)),
     "threshold": (("data_out",), ("data_out_0",)),
     "selu": (("data_out",), ("data_out_0",)),
     "tanh": (("data_out",), ("data_out_0",)),

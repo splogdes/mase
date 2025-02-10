@@ -32,6 +32,8 @@ func_data = {
     "flatten": {"input": "data_in", "start_dim": "config", "end_dim": "config"},
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.relu.html
     "relu": {"input": "data_in", "inplace": "config"},
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.leaky_relu.html
+    "leaky_relu": {"input": "data_in", "negative_slope": "config", "inplace": "config"},
     # https://pytorch.org/docs/stable/generated/torch.nn.Threshold.html
     "threshold": {"input": "data_in", "threshold": "config", "value": "config", "inplace": "config"},
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.hardshrink.html

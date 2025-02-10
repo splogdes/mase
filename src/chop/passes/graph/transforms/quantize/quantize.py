@@ -28,6 +28,7 @@ QUANTIZEABLE_OP = (
     "mul",
     "linear",
     "relu",
+    "leaky_relu",
     "threshold",
     "sub",
     "batch_norm2d",

@@ -23,7 +23,7 @@ def threshold_integer(x, thr, val, inplace=False, config=None):
     else:
         x_width = config["data_in_width"]
         x_frac_width = config["data_in_frac_width"]
-        x_quantizer = partial(integer_quantizer, width=x_width, frac_width=x_frac_width, is_signed=False)
+        x_quantizer = partial(integer_quantizer, width=x_width, frac_width=x_frac_width, is_signed=True)
         return F.threshold(x_quantizer(x), thr, val, inplace=inplace)
 
 

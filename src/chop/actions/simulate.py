@@ -60,6 +60,8 @@ def simulate(
                 "-Wno-fatal",
                 "-Wno-lint",
                 "-Wno-style",
+                "--trace-depth",
+                str(trace_depth),
             ]
         else:
             raise ValueError(f"Unrecognized simulator: {simulator}")

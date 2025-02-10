@@ -76,8 +76,6 @@ def graph_iterator_for_mase_ops(graph):
                 mase_op = "linear"
             elif isinstance(module, nn.ReLU):
                 mase_op = "relu"
-            elif isinstance(module, nn.Threshold):
-                mase_op = "threshold"
             elif isinstance(module, nn.SELU):
                 mase_op = "selu"
             elif isinstance(module, nn.Tanh):
@@ -264,7 +262,6 @@ def graph_iterator_for_metadata(
         else:
             raise ValueError(f"Unknown node type: {node.op}")
 
-        env[node.name] = result
         env[node.name] = result
 
         # For call_method nodes, the input tensor is not kept in meta["common"]["args"]

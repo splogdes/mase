@@ -69,6 +69,14 @@ INTERNAL_COMP = {
             ],
         },
     ],
+    "leaky_relu": [
+        {
+            "name": "fixed_leaky_relu",
+            "dependence_files": [
+                "activation_layers/rtl/fixed_leaky_relu.sv",
+            ],
+        },
+    ],
     "threshold": [
         {
             "name": "fixed_threshold",
