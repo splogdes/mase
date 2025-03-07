@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 
 # Model
-class NeRFVision(nn.Module, output_ch=4):
+class NeRFVision(nn.Module):
     def __init__(
         self,
         D=8,

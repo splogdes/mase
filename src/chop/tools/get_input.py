@@ -259,6 +259,18 @@ class InputGenerator:
                     raise ValueError(
                         f"Task {self.task} is not supported for {self.model_info.name}"
                     )
+        elif self.model_info.is_nerf_model:
+            match self.task:
+                case "nerf":
+                    input_dict = next(self.dataloader_iter)
+                    inputs = {
+                        "rays" : input_dict['rays'],
+                        "rgbs" : input_dict['rgbs']
+                    }
+                case _:
+                    raise ValueError(
+                        f"Task {self.task} is not supported for {self.model_info.name}"
+                    )
         else:
             raise RuntimeError(
                 f"Unsupported model+task: {self.model_info.name}+{self.task}"
