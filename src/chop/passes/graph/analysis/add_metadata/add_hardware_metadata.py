@@ -13,8 +13,8 @@ from chop.passes.graph.analysis.utils import (
 from chop.passes.graph.utils import get_mase_op, deepgetattr, get_module_by_name
 
 from torch import nn
-
-from .hardware_metadata_layers import INTERNAL_COMP
+from typing import get_args
+from .hardware_metadata_layers import INTERNAL_COMP, supported_hw_quantisations
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,29 @@ def _cap(name):
     return str(name).upper()
 
 
-def add_component_source(node):
+def get_node_type(node: fx.Node) -> supported_hw_quantisations:
+    print(node, node.meta['mase']['common']['args'])
+    
+    types: set[str] = set()
+    for _arg, type_info in node.meta['mase']['common']['args'].items():
+        match type_info:
+            case dict():
+                types.add(type_info['type'])
+            case _:
+                pass
+    types = set(types)
+    # types = set([match type_info: case dict(): type_info['type'] case _: None for _arg, type_info in node.meta['mase']['common']['args'].items()])
+    assert len(types) == 1, (
+        f"More than one type in node {node.name}, {types}, {node.meta['mase']['common']['args']}"
+    )
+    node_type = types.pop()
+    assert node_type in get_args(supported_hw_quantisations), (
+        f"Unsupported hardware quantisation type: {node_type}"
+    )
+    return node_type
+
+
+def add_component_source(node: fx.Node):
     if node.meta["mase"]["hardware"]["is_implicit"]:
         return
 
@@ -50,10 +72,13 @@ def add_component_source(node):
     elif mase_op in INTERNAL_COMP.keys():
         node.meta["mase"]["hardware"]["toolchain"] = "INTERNAL_RTL"
         # take the first ip in the component list by default
-        node.meta["mase"]["hardware"]["module"] = INTERNAL_COMP[mase_op][0]["name"]
-        node.meta["mase"]["hardware"]["dependence_files"] = INTERNAL_COMP[mase_op][0][
-            "dependence_files"
+        node_type = get_node_type(node)
+        node.meta["mase"]["hardware"]["module"] = INTERNAL_COMP[mase_op][node_type][
+            "name"
         ]
+        node.meta["mase"]["hardware"]["dependence_files"] = INTERNAL_COMP[mase_op][
+            node_type
+        ]["dependence_files"]
     else:
         node.meta["mase"]["hardware"]["toolchain"] = "INTERNAL_HLS"
         node.meta["mase"]["hardware"]["module"] = None
@@ -76,7 +101,7 @@ def add_component_source(node):
             node.meta["mase"]["hardware"]["interface"][arg] = {}
 
 
-def add_verilog_param(node):
+def add_verilog_param(node: fx.Node):
     if node.meta["mase"]["hardware"]["is_implicit"]:
         return
 
@@ -170,7 +195,7 @@ def add_extra_verilog_param(node, graph: MaseGraph):
             ]
 
 
-def add_hardware_metadata_analysis_pass(graph, pass_args={}):
+def add_hardware_metadata_analysis_pass(graph: MaseGraph, pass_args={}):
     """add hardware metadata
 
     :param graph: a MaseGraph
