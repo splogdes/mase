@@ -52,7 +52,7 @@ from .linear import (
     LinearTernary,
     LinearLUT,
     LinearLogicNets,
-    LinearMXIntHardware,
+    LinearMXInt,
 )
 from .pool2d import (
     AdaptiveAvgPool2dInteger,
@@ -187,7 +187,7 @@ quantized_basic_module_map = {
     "linear_integer": LinearInteger,
     "linear_fixed": LinearInteger,
     "linear_log": LinearLog,
-    "linear_mxint_hardware": LinearMXIntHardware,
+    "linear_mxint": LinearMXInt,
     "linear_block_log": LinearBlockLog,
     "linear_minifloat_ieee": LinearMinifloatIEEE,
     "linear_minifloat_denorm": LinearMinifloatDenorm,

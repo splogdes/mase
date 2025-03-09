@@ -149,7 +149,7 @@ from .linear import (
     linearTernary,
     linearLUT,
     linearLogicNets,
-    linearMXIntHardware,
+    linearMXInt,
 )
 
 quantized_func_map = {
@@ -267,7 +267,7 @@ quantized_func_map = {
     "linear_integer": linearInteger,
     "linear_fixed": linearInteger,
     "linear_log": linearLog,
-    "linear_mxint_hardware": linearMXIntHardware,
+    "linear_mxint": linearMXInt,
     "linear_block_log": linearBlockLog,
     "linear_minifloat_ieee": linearMinifloatIEEE,
     "linear_minifloat_denorm": linearMinifloatDenorm,
