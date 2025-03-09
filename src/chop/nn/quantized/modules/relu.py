@@ -302,6 +302,7 @@ class ReLUTernary(_ReLUBase):
         # )
         self.config = config
 
+
 class ReLUMXINT(_ReLUBase):
     def __init__(self, inplace: bool = False, config: dict = None):
         super().__init__(inplace)

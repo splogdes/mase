@@ -14,7 +14,7 @@ from chop.nn.quantizers import (
     minifloat_ieee_quantizer,
     binary_quantizer,
     ternary_quantizer,
-    mxint_quantizer
+    mxint_quantizer,
 )
 
 

@@ -70,7 +70,7 @@ from .relu import (
     ReLUMinifloatIEEE,
     ReLUBinary,
     ReLUTernary,
-    ReLUMXINT
+    ReLUMXINT,
 )
 from .batch_norm2d import (
     BatchNorm2dInteger,

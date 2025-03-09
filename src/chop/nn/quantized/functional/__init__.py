@@ -73,7 +73,7 @@ from .relu import (
     relu_minifloat_ieee,
     relu_binary,
     relu_ternary,
-    relu_mxint
+    relu_mxint,
 )
 
 from .selu import (
