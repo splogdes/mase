@@ -45,9 +45,9 @@ def update_arg(node, arg_name, dtype=None, precision=None, size=None):
     if dtype is not None:
         node.meta["mase"].parameters["common"]["args"][arg_name]["type"] = dtype
     if precision is not None:
-        node.meta["mase"].parameters["common"]["args"][arg_name][
-            "precision"
-        ] = precision
+        node.meta["mase"].parameters["common"]["args"][arg_name]["precision"] = (
+            precision
+        )
     if size is not None:
         node.meta["mase"].parameters["common"]["args"][arg_name]["size"] = size
 
@@ -84,37 +84,11 @@ def update_result(node, output_name, dtype=None, precision=None, size=None):
     if dtype is not None:
         node.meta["mase"].parameters["common"]["results"][output_name]["type"] = dtype
     if precision is not None:
-        node.meta["mase"].parameters["common"]["results"][output_name][
-            "precision"
-        ] = precision
+        node.meta["mase"].parameters["common"]["results"][output_name]["precision"] = (
+            precision
+        )
     if size is not None:
         node.meta["mase"].parameters["common"]["results"][output_name]["size"] = size
-
-
-MASE_OP_TO_OUTPUT_ENTRIES = {
-    # entry and arg corresponding to name in software and hardware mapping
-    "add": (("data_out",), ("data_out_0",)),
-    "bmm": (("data_out",), ("data_out_0",)),
-    "conv1d": (("data_out",), ("data_out_0",)),
-    "conv2d": (("data_out",), ("data_out_0",)),
-    "matmul": (("data_out",), ("data_out_0",)),
-    "mul": (("data_out",), ("data_out_0",)),
-    "linear": (("data_out",), ("data_out_0",)),
-    "relu": (("data_out",), ("data_out_0",)),
-    "selu": (("data_out",), ("data_out_0",)),
-    "tanh": (("data_out",), ("data_out_0",)),
-    "gelu": (("data_out",), ("data_out_0",)),
-    "softsign": (("data_out",), ("data_out_0",)),
-    "softplus": (("data_out",), ("data_out_0",)),
-    "sub": (("data_out",), ("data_out_0",)),
-    "batch_norm2d": (("data_out",), ("data_out_0",)),
-    "layer_norm": (("data_out",), ("data_out_0",)),
-    "group_norm": (("data_out",), ("data_out_0",)),
-    "instance_norm2d": (("data_out",), ("data_out_0",)),
-    "rms_norm": (("data_out",), ("data_out_0")),
-    "grouped_query_attention": (("data_out",), ("data_out_0")),
-}
-
 
 def arg_exists(node, arg_name) -> bool:
     return arg_name in node.meta["mase"].parameters["common"]["args"]
@@ -144,15 +118,25 @@ def update_quant_meta_param(node, config: dict, mase_op: str) -> None:
             precision=quant_arith_to_list_fn[quant_arith](config, entry),
         )
 
-    for entry, arg in zip(*MASE_OP_TO_OUTPUT_ENTRIES[mase_op]):
-        # Quantise all the output to fixed point. TODO: Make this automatic. Hardware will need change too
-        if quant_arith == "binary" or quant_arith == "binary_residual":
-            update_result(
-                node,
-                output_name=arg,
-                dtype="binary",
-                precision=[32, 0, 1],  # [bitwidth, stochastic, bipolar]
-            )
+    if quant_arith == "binary" or quant_arith == "binary_residual":
+        update_result(
+            node,
+            output_name='data_out_0',
+            dtype="binary",
+            precision=[32, 0, 1],  # [bitwidth, stochastic, bipolar]
+        )
+    else:
+        try:
+            precision = quant_arith_to_list_fn[quant_arith](config, 'data_out')
+        except KeyError:
+            # fallback to use data_in-config if data_out is not defined
+            precision = quant_arith_to_list_fn[quant_arith](config, 'data_in')
+        update_result(
+            node,
+            output_name='data_out_0',
+            dtype=quant_arith,
+            precision=precision,
+        )
 
 
 def relink_node_meta(node, model):
