@@ -70,6 +70,7 @@ from .relu import (
     ReLUMinifloatIEEE,
     ReLUBinary,
     ReLUTernary,
+    ReLUMXINT
 )
 from .batch_norm2d import (
     BatchNorm2dInteger,
@@ -211,6 +212,7 @@ quantized_basic_module_map = {
     "relu_block_fp": ReLUBlockFP,
     "relu_binary": ReLUBinary,
     "relu_ternary": ReLUTernary,
+    "relu_mxint": ReLUMXINT,
     "batch_norm2d_integer": BatchNorm2dInteger,
     "batch_norm2d_binary": BatchNorm2dBinary,
     "layer_norm_integer": LayerNormInteger,

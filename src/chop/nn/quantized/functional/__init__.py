@@ -73,6 +73,7 @@ from .relu import (
     relu_minifloat_ieee,
     relu_binary,
     relu_ternary,
+    relu_mxint
 )
 
 from .selu import (
@@ -213,6 +214,7 @@ quantized_func_map = {
     "relu_block_log": relu_block_log,
     "relu_binary": relu_binary,
     "relu_ternary": relu_ternary,
+    "relu_mxint": relu_mxint,
     "selu_block_minifloat": selu_block_minifloat,
     "selu_integer": selu_integer,
     "selu_fixed": selu_integer,
