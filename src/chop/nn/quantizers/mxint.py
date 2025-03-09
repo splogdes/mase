@@ -11,17 +11,16 @@ def _mxint_quantize(
     skip_first_dim: bool = True,
 ):
     """
-    - Convert IEEE FP32/64 to Microscaling Floating Point (MXFP), where an exponent is shared over all elements in a block.
+    - Convert IEEE FP32/64 to Microscaling Interger (MXINT), where an exponent is shared over all elements in a block.
     - https://arxiv.org/pdf/2310.10537.pdf
     
     ---
-    - forward: convert IEEE FP32/64 to MXFP
+    - forward: convert IEEE FP32/64 to MXINT
     - backward: STE
 
     ---
     - `width`: The number of mantissa bits + 1 (the sign bit)
     - `exponent_width`: the number of exponent bits
-    - `shared_exponent_width`: the number of exponent bits, which is shared over a block
     - `block_size`: a list of integers where each integer is the block size on that dimension. See function `block`.
     """
     
