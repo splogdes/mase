@@ -30,8 +30,6 @@ def _cap(name):
 
 
 def get_node_type(node: fx.Node) -> supported_hw_quantisations:
-    print(node, node.meta['mase']['common']['args'])
-    
     types: set[str] = set()
     for _arg, type_info in node.meta['mase']['common']['args'].items():
         match type_info:
@@ -46,7 +44,7 @@ def get_node_type(node: fx.Node) -> supported_hw_quantisations:
     )
     node_type = types.pop()
     assert node_type in get_args(supported_hw_quantisations), (
-        f"Unsupported hardware quantisation type: {node_type}"
+        f"({node.name}) Unsupported hardware quantisation type: {node_type}"
     )
     return node_type
 
