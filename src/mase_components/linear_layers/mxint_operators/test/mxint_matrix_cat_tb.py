@@ -27,6 +27,7 @@ logger.setLevel(logging.DEBUG)
 
 torch.manual_seed(10)
 
+
 class MXIntMatrixCat(Testbench):
     def __init__(self, dut, num) -> None:
         super().__init__(dut, dut.clk, dut.rst)
@@ -144,6 +145,7 @@ class MXIntMatrixCat(Testbench):
 async def test(dut):
     tb = MXIntMatrixCat(dut, num=2)
     await tb.run_test()
+
 
 if __name__ == "__main__":
     mase_runner(
