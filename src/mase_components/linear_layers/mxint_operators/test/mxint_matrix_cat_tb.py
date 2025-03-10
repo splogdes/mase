@@ -66,28 +66,61 @@ class MXIntMatrixCat(Testbench):
 
             # print(f'TENSOR_SIZE_DIM1: {}')
 
-            d0 = torch.rand(int(self.dut.DATA_IN_0_TENSOR_SIZE_DIM_0), int(self.dut.DATA_IN_0_TENSOR_SIZE_DIM_1))
-            d1 = torch.rand(int(self.dut.DATA_IN_1_TENSOR_SIZE_DIM_0), int(self.dut.DATA_IN_1_TENSOR_SIZE_DIM_1))
+            d0 = torch.rand(
+                int(self.dut.DATA_IN_0_TENSOR_SIZE_DIM_0),
+                int(self.dut.DATA_IN_0_TENSOR_SIZE_DIM_1),
+            )
+            d1 = torch.rand(
+                int(self.dut.DATA_IN_1_TENSOR_SIZE_DIM_0),
+                int(self.dut.DATA_IN_1_TENSOR_SIZE_DIM_1),
+            )
 
-            (data_in_0, mdata_in_0, edata_in_0) = block_mxint_quant(d0, {
-                'width' : int(self.dut.DATA_IN_0_PRECISION_0),
-                'exponent_width' : int(self.dut.DATA_IN_0_PRECISION_1)
-            }, [int(self.dut.DATA_IN_0_PARALLELISM_DIM_0), int(self.dut.DATA_IN_0_PARALLELISM_DIM_1)])
+            (data_in_0, mdata_in_0, edata_in_0) = block_mxint_quant(
+                d0,
+                {
+                    "width": int(self.dut.DATA_IN_0_PRECISION_0),
+                    "exponent_width": int(self.dut.DATA_IN_0_PRECISION_1),
+                },
+                [
+                    int(self.dut.DATA_IN_0_PARALLELISM_DIM_0),
+                    int(self.dut.DATA_IN_0_PARALLELISM_DIM_1),
+                ],
+            )
 
+            (data_in_1, mdata_in_1, edata_in_1) = block_mxint_quant(
+                d1,
+                {
+                    "width": int(self.dut.DATA_IN_1_PRECISION_0),
+                    "exponent_width": int(self.dut.DATA_IN_1_PRECISION_1),
+                },
+                [
+                    int(self.dut.DATA_IN_1_PARALLELISM_DIM_0),
+                    int(self.dut.DATA_IN_1_PARALLELISM_DIM_1),
+                ],
+            )
 
-            (data_in_1, mdata_in_1, edata_in_1) = block_mxint_quant(d1, {
-                'width' : int(self.dut.DATA_IN_1_PRECISION_0),
-                'exponent_width' : int(self.dut.DATA_IN_1_PRECISION_1)
-            }, [int(self.dut.DATA_IN_1_PARALLELISM_DIM_0), int(self.dut.DATA_IN_1_PARALLELISM_DIM_1)])
-
-            din1 += pack_tensor_to_mx_listed_chunk(mdata_in_0, edata_in_0, [int(self.dut.DATA_IN_0_PARALLELISM_DIM_0), int(self.dut.DATA_IN_0_PARALLELISM_DIM_1)])
-            din2 += pack_tensor_to_mx_listed_chunk(mdata_in_1, edata_in_1, [int(self.dut.DATA_IN_1_PARALLELISM_DIM_0), int(self.dut.DATA_IN_1_PARALLELISM_DIM_1)])
+            din1 += pack_tensor_to_mx_listed_chunk(
+                mdata_in_0,
+                edata_in_0,
+                [
+                    int(self.dut.DATA_IN_0_PARALLELISM_DIM_0),
+                    int(self.dut.DATA_IN_0_PARALLELISM_DIM_1),
+                ],
+            )
+            din2 += pack_tensor_to_mx_listed_chunk(
+                mdata_in_1,
+                edata_in_1,
+                [
+                    int(self.dut.DATA_IN_1_PARALLELISM_DIM_0),
+                    int(self.dut.DATA_IN_1_PARALLELISM_DIM_1),
+                ],
+            )
 
         exp_outputs = din1 + din2
 
-        print(f'Din 1: \n {din1}')
-        print(f'Din 2: \n {din2}')
-        print(f'Dout: \n {exp_outputs}')
+        print(f"Din 1: \n {din1}")
+        print(f"Din 2: \n {din2}")
+        print(f"Dout: \n {exp_outputs}")
         return din1, din2, exp_outputs
 
     async def run_test(self):
@@ -121,31 +154,23 @@ if __name__ == "__main__":
             {
                 "DATA_IN_0_PRECISION_0": 8,
                 "DATA_IN_0_PRECISION_1": 4,
-
                 "DATA_IN_0_PRECISION_0": 8,
                 "DATA_IN_0_PRECISION_1": 4,
-
                 "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
                 "DATA_IN_0_TENSOR_SIZE_DIM_1": 2,
-
                 "DATA_IN_0_PARALLELISM_DIM_0": 2,
                 "DATA_IN_0_PARALLELISM_DIM_1": 2,
-
                 "DATA_IN_1_PRECISION_0": 8,
                 "DATA_IN_1_PRECISION_1": 4,
-
                 "DATA_IN_1_TENSOR_SIZE_DIM_0": 2,
                 "DATA_IN_1_TENSOR_SIZE_DIM_1": 2,
-
                 "DATA_IN_1_PARALLELISM_DIM_0": 2,
                 "DATA_IN_1_PARALLELISM_DIM_1": 2,
-
                 "DATA_OUT_0_PRECISION_0": 8,
                 "DATA_OUT_0_PRECISION_1": 4,
-
                 "DATA_OUT_0_PARALLELISM_DIM_0": 2,
                 "DATA_OUT_0_PARALLELISM_DIM_1": 2,
-                "BLOCK_SIZE" : 2 * 2 # Parallelism == Block Size
+                "BLOCK_SIZE": 2 * 2,  # Parallelism == Block Size
             },
         ],
     )

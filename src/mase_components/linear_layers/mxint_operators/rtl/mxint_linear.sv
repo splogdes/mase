@@ -159,14 +159,13 @@ module mxint_linear #(
   // Assume the parallelised hardware above have the same arrival time
   // which means that they always have the same state. So we can just
   // pick one of the valid signal to use.
-  logic [DATA_IN_0_PARALLELISM_DIM_1*WEIGHT_PARALLELISM_DIM_1-1:0]
-      fdp_data_ready, fdp_weight_ready;
+  logic [DATA_IN_0_PARALLELISM_DIM_1*WEIGHT_PARALLELISM_DIM_1-1:0] fdp_data_ready, fdp_weight_ready;
   assign circular_weight_ready = fdp_weight_ready[0];
   assign circular_data_in_0_ready = fdp_data_ready[0];
   logic [FDP_EXP_WIDTH-1:0] fdp_edata_out [DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0];
   logic [DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0] fdp_data_out_valid;
 
-  logic [FDP_WIDTH-1:0] acc_mdata_in [DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0];
+  logic [FDP_WIDTH-1:0] acc_mdata_in[DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0];
   logic [FDP_EXP_WIDTH-1:0] acc_edata_in;
   logic acc_data_in_valid, acc_data_in_ready;
 
