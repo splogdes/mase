@@ -8,8 +8,8 @@
 *
 * E.g to concatenate the following 2 x 2 matricies:
 *
-*       1   2       5   6
-*       3   4       7   8
+*       1   2       5   6       -->   1   2   5   6
+*       3   4       7   8       -->   3   4   7   8
 *
 * The data is expected to be streamed left to right in blocks. So for a block
 * size of 1, this module expects 1 2 3 4, and 5 6 7 8 on each input interface.
@@ -51,6 +51,8 @@ module mxint_matrix_cat
     parameter DATA_OUT_0_PARALLELISM_DIM_0  = 1,
     parameter DATA_OUT_0_PARALLELISM_DIM_1  = 1,
 
+    parameter BLOCK_SIZE                   = PARALLELISM_0*PARALLELISM_1,
+
     //---------------------------------------------------//
     //-------------     Hardware Aliases   --------------//
     //---------------------------------------------------//
@@ -66,7 +68,6 @@ module mxint_matrix_cat
 
     localparam PARALLELISM_0                = DATA_IN_0_PARALLELISM_DIM_0,
     localparam PARALLELISM_1                = DATA_IN_0_PARALLELISM_DIM_1,
-    localparam BLOCK_SIZE                   = PARALLELISM_0*PARALLELISM_1,
 
     localparam MWIDTH_IN_0                  = DATA_IN_0_PRECISION_0,
     localparam EWIDTH_IN_0                  = DATA_IN_0_PRECISION_1,
@@ -110,7 +111,7 @@ module mxint_matrix_cat
 
     endfunction
 
-    localparam COUNTER_WIDTH = BLOCK_SIZE == 1 ? BLOCK_SIZE : $clog2(BLOCK_SIZE);
+    localparam COUNTER_WIDTH = $clog2(DATA_OUT_0_TENSOR_SIZE_DIM_1) + 1;
 
     initial
     begin
@@ -131,7 +132,6 @@ module mxint_matrix_cat
 
     logic [COUNTER_WIDTH-1:0]   out_cntr_b;
     logic [COUNTER_WIDTH-1:0]   out_cntr_r;
-
 
     logic [MWIDTH_IN_0-1:0]     mdata_in_0_c [BLOCK_SIZE-1:0];
     logic [EWIDTH_IN_0-1:0]     edata_in_0_c;
@@ -157,7 +157,7 @@ module mxint_matrix_cat
     begin : no_cast_in_0_gen
     always_comb
     begin
-        for (int i = 0; i < BLOCK_SIZE-1; i++)
+        for (int i = 0; i < BLOCK_SIZE; i++)
         begin
            mdata_in_0_c[i]  = mdata_in_0[i];
         end
@@ -192,7 +192,7 @@ module mxint_matrix_cat
     begin : no_cast_in_1_gen
     always_comb
     begin
-        for (int i = 0; i < BLOCK_SIZE-1; i++)
+        for (int i = 0; i < BLOCK_SIZE; i++)
         begin
            mdata_in_1_c[i]  = mdata_in_1[i];
         end
@@ -265,8 +265,8 @@ module mxint_matrix_cat
     begin
         state_b         = state_r;
         out_cntr_b      = out_cntr_r;
-        fifo_0_ready    = fifo_0_valid && data_out_0_ready && (out_cntr_b < OUT_LAST_DIM);
-        fifo_1_ready    = fifo_1_valid && data_out_0_ready && (out_cntr_b < OUT_LAST_DIM);
+        fifo_0_ready    = fifo_0_valid && data_out_0_ready && (out_cntr_b < OUT_LAST_DIM) && (state_r == OUT_0);
+        fifo_1_ready    = fifo_1_valid && data_out_0_ready && (out_cntr_b < OUT_LAST_DIM) && (state_r == OUT_1);
 
         case (state_r)
             OUT_0:
