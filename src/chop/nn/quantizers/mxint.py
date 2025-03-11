@@ -14,6 +14,7 @@ def _mxint_quantize(
     """
     - Convert IEEE FP32/64 to Microscaling Interger (MXINT), where an exponent is shared over all elements in a block.
     - https://arxiv.org/pdf/2310.10537.pdf
+    - https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf
 
     ---
     - forward: convert IEEE FP32/64 to MXINT

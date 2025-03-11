@@ -70,6 +70,28 @@ INTERNAL_COMP: Dict[str, Dict[supported_hw_quantisations, IpDescType]] = {
                 "linear_layers/matmul/rtl/matrix_stream_transpose.sv",
             ],
         },
+        "mxint": {
+            "name": "mxint_linear",
+            "dependence_files": [
+                "linear_layers/mxint_operators/rtl/mxint_linear.sv",
+                "linear_layers/mxint_operators/rtl/mxint_circular.sv",
+                "memory/rtl/input_buffer.sv",
+                "linear_layers/mxint_operators/rtl/mxint_dot_product.sv",
+                "linear_layers/mxint_operators/rtl/mxint_accumulator.sv",
+                "linear_layers/mxint_operators/rtl/mxint_cast.sv",
+                "linear_layers/mxint_operators/rtl/log2_max_abs.sv",
+                "linear_layers/mxint_operators/rtl/or_tree.sv",
+                "linear_layers/mxint_operators/rtl/or_tree_layer.sv",
+                "linear_layers/mxint_operators/rtl/mxint_register_slice.sv",
+                "common/rtl/unpacked_register_slice.sv",
+                "common/rtl/split2.sv",
+                "common/rtl/join2.sv",
+                "memory/rtl/unpacked_skid_buffer.sv",
+                "memory/rtl/skid_buffer.sv",
+                "memory/rtl/ultraram_fifo.sv",
+                "memory/rtl/ultraram.v",
+            ],
+        },
     },
     "relu": {
         "fixed": {
