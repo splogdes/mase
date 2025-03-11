@@ -117,7 +117,7 @@ def _single_test(
             # Do not use params in hierarchical verilation
             parameters=module_params if not hierarchical else {},
             build_dir=test_work_dir,
-            waves=trace
+            waves=trace,
         )
     try:
         runner.test(
@@ -127,7 +127,7 @@ def _single_test(
             seed=seed,
             results_xml="results.xml",
             build_dir=test_work_dir,
-            waves=trace
+            waves=trace,
         )
         num_tests, fail = get_results(test_work_dir.joinpath("results.xml"))
     except Exception as e:
@@ -319,7 +319,7 @@ def simulate_pass(
         ],
         parameters=module_params,
         build_dir=sim_dir,
-        waves=trace
+        waves=trace,
     )
     runner.test(
         hdl_toplevel="top",
