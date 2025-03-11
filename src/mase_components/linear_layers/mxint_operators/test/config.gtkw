@@ -1,35 +1,35 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Mon Mar 10 17:24:24 2025
+[*] Mon Mar 10 21:08:33 2025
 [*]
 [dumpfile] "/home/omar/Documents/year-4/adls/mase/src/mase_components/linear_layers/mxint_operators/test/build/mxint_matrix_cat/test_0/dump.fst"
-[dumpfile_mtime] "Mon Mar 10 17:22:19 2025"
-[dumpfile_size] 2559
+[dumpfile_mtime] "Mon Mar 10 19:37:33 2025"
+[dumpfile_size] 2850
 [savefile] "/home/omar/Documents/year-4/adls/mase/src/mase_components/linear_layers/mxint_operators/test/config.gtkw"
-[timestart] 0
+[timestart] 61500
 [size] 1920 1033
 [pos] -1 -1
-*-15.300000 49800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.300000 89900 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] .
 [treeopen] .mxint_matrix_cat.
-[sst_width] 273
-[signals_width] 214
+[sst_width] 419
+[signals_width] 254
 [sst_expanded] 1
 [sst_vpaned_height] 307
 @28
 mxint_matrix_cat.clk
-@800201
+@800200
 -mdata_0
-@23
+@22
 mxint_matrix_cat.mdata_in_0_fifo[0][7:0]
 mxint_matrix_cat.mdata_in_0_fifo[1][7:0]
 mxint_matrix_cat.mdata_in_0_fifo[2][7:0]
 mxint_matrix_cat.mdata_in_0_fifo[3][7:0]
 mxint_matrix_cat.edata_in_0_fifo[3:0]
-@29
+@28
 mxint_matrix_cat.fifo_0_valid
 mxint_matrix_cat.fifo_0_ready
-@1000201
+@1000200
 -mdata_0
 @800200
 -data_1
@@ -44,5 +44,12 @@ mxint_matrix_cat.fifo_1_ready
 mxint_matrix_cat.fifo_1_valid
 @1000200
 -data_1
+@100000028
+mxint_matrix_cat.state_r
+@420
+mxint_matrix_cat.DATA_OUT_0_TENSOR_SIZE_DIM_1
+mxint_matrix_cat.COUNTER_WIDTH
+@23
+mxint_matrix_cat.out_cntr_r[2:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -179,7 +179,7 @@ module mxint_linear #(
   // and each one computes for IN_0_DEPTH iterations for each inputs.
   for (genvar i = 0; i < DATA_IN_0_PARALLELISM_DIM_1; i = i + 1) begin : out_dim_1
     for (genvar j = 0; j < WEIGHT_PARALLELISM_DIM_1; j = j + 1) begin : out_dim_0
-      // Assume the weight are transposed and partitioned 
+      // Assume the weight are transposed and partitioned
       logic [WEIGHT_PRECISION_0-1:0] current_mweight[WEIGHT_PARALLELISM_DIM_0-1:0];
       logic [WEIGHT_PRECISION_1-1:0] current_eweight;
       logic [DATA_IN_0_PRECISION_0-1:0] current_mdata[WEIGHT_PARALLELISM_DIM_0-1:0];

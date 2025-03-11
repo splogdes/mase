@@ -1,0 +1,99 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Mon Mar 10 22:43:55 2025
+[*]
+[dumpfile] "/home/omar/Documents/year-4/adls/mase/src/mase_components/linear_layers/mxint_operators/test/build/mxint_linear/test_0/dump.fst"
+[dumpfile_mtime] "Mon Mar 10 21:47:50 2025"
+[dumpfile_size] 14664
+[savefile] "/home/omar/Documents/year-4/adls/mase/src/mase_components/linear_layers/mxint_operators/test/lin_config.gtkw"
+[timestart] 0
+[size] 1920 1033
+[pos] -1 -1
+*-15.900000 27500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] .
+[sst_width] 273
+[signals_width] 246
+[sst_expanded] 1
+[sst_vpaned_height] 307
+@28
+mxint_linear.clk
+@800200
+-mdata
+@22
+mxint_linear.mdata_in_0[0][7:0]
+mxint_linear.mdata_in_0[1][7:0]
+@28
+mxint_linear.data_in_0_valid
+mxint_linear.data_in_0_ready
+@1000200
+-mdata
+@800200
+-weights
+@40c00420
+[fpshift_count] 6
+mxint_linear.mweight[0][7:0]
+@28
+(0)mxint_linear.mweight[0][7:0]
+(1)mxint_linear.mweight[0][7:0]
+(2)mxint_linear.mweight[0][7:0]
+(3)mxint_linear.mweight[0][7:0]
+(4)mxint_linear.mweight[0][7:0]
+(5)mxint_linear.mweight[0][7:0]
+(6)mxint_linear.mweight[0][7:0]
+(7)mxint_linear.mweight[0][7:0]
+@41401600
+-group_end
+@40c00420
+[fpshift_count] 6
+mxint_linear.mweight[1][7:0]
+@28
+(0)mxint_linear.mweight[1][7:0]
+(1)mxint_linear.mweight[1][7:0]
+(2)mxint_linear.mweight[1][7:0]
+(3)mxint_linear.mweight[1][7:0]
+(4)mxint_linear.mweight[1][7:0]
+(5)mxint_linear.mweight[1][7:0]
+(6)mxint_linear.mweight[1][7:0]
+(7)mxint_linear.mweight[1][7:0]
+@41401600
+-group_end
+@40000420
+[fpshift_count] 6
+mxint_linear.mweight[2][7:0]
+[fpshift_count] 6
+mxint_linear.mweight[3][7:0]
+@c00421
+mxint_linear.eweight[3:0]
+@28
+(0)mxint_linear.eweight[3:0]
+(1)mxint_linear.eweight[3:0]
+(2)mxint_linear.eweight[3:0]
+(3)mxint_linear.eweight[3:0]
+@1401201
+-group_end
+@1000200
+-weights
+@800200
+-circ_mdata
+@22
+mxint_linear.circular_mdata_in_0[0][7:0]
+mxint_linear.circular_mdata_in_0[1][7:0]
+@28
+mxint_linear.circular_data_in_0_valid
+mxint_linear.circular_data_in_0_ready
+@1000200
+-circ_mdata
+@800200
+-circ_weight
+@22
+mxint_linear.circular_mweight[0][7:0]
+mxint_linear.circular_mweight[1][7:0]
+mxint_linear.circular_mweight[2][7:0]
+mxint_linear.circular_mweight[3][7:0]
+@28
+mxint_linear.circular_weight_valid
+mxint_linear.circular_weight_ready
+@1000200
+-circ_weight
+[pattern_trace] 1
+[pattern_trace] 0
