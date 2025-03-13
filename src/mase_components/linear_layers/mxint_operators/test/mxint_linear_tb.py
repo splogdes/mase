@@ -182,7 +182,6 @@ class LinearTB(Testbench):
                 self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"),
             ],
         )
-        breakpoint()
         self.data_out_0_monitor.load_monitor(outs)
 
         await Timer(us, units="us")
