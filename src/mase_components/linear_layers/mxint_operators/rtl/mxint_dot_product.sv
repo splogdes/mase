@@ -115,7 +115,7 @@ module mxint_dot_product #(
       .empty(),
       .full()
   );
-  assign edata_out_0 = $signed(buffer_eweight) + $signed(buffer_edata_in_0);
+  assign edata_out_0 = buffer_eweight + buffer_edata_in_0;
   fixed_dot_product #(
       .IN_WIDTH(DATA_IN_0_PRECISION_0),
       .WEIGHT_WIDTH(WEIGHT_PRECISION_0),
