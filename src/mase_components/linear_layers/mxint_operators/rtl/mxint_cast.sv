@@ -13,18 +13,26 @@ module mxint_cast #(
     parameter OUT_EXP_WIDTH = 1,
     parameter BLOCK_SIZE = 1
 ) (
-    input  logic                            clk,
-    input  logic                            rst,
-    input  logic signed [ IN_MAN_WIDTH-1:0] mdata_in      [BLOCK_SIZE-1:0],
-    input  logic        [ IN_EXP_WIDTH-1:0] edata_in,
-    input  logic                            data_in_valid,
-    output logic                            data_in_ready,
+    input logic clk,
+    input logic rst,
+
+    // Input Data
+    input  logic signed [IN_MAN_WIDTH-1:0] mdata_in     [BLOCK_SIZE-1:0],
+    input  logic        [IN_EXP_WIDTH-1:0] edata_in,
+    input  logic                           data_in_valid,
+    output logic                           data_in_ready,
+
+    // Output Data
     output logic signed [OUT_MAN_WIDTH-1:0] mdata_out     [BLOCK_SIZE-1:0],
     output logic        [OUT_EXP_WIDTH-1:0] edata_out,
     output logic                            data_out_valid,
     input  logic                            data_out_ready
 );
 
+
+  // =============================
+  // Internal Signals
+  // =============================
 
   logic data_for_max_valid, data_for_max_ready, data_for_out_valid, data_for_out_ready;
   logic [IN_MAN_WIDTH-1:0] mbuffer_data_for_out [BLOCK_SIZE-1:0];
@@ -41,12 +49,21 @@ module mxint_cast #(
   localparam FIFO_DEPTH = $clog2(BLOCK_SIZE);
   logic [LOSSLESSS_EDATA_WIDTH - 1:0] edata_out_full;
 
+
+  // =============================
+  // Handshake Signals
+  // =============================
+
   split2 split_i (
       .data_in_valid (data_in_valid),
       .data_in_ready (data_in_ready),
       .data_out_valid({data_for_max_valid, data_for_out_valid}),
       .data_out_ready({data_for_max_ready, data_for_out_ready})
   );
+
+  // =============================
+  // Compute Log2 Max Value
+  // =============================
 
   log2_max_abs #(
       .IN_SIZE (BLOCK_SIZE),
@@ -62,7 +79,11 @@ module mxint_cast #(
       .data_out_ready(log2_max_value_ready)
   );
 
-  // FIFO for buffering data
+  // =============================
+  // FIFO
+  // =============================
+
+
   if (FIFO_DEPTH == 0) begin
 
     always_comb begin
@@ -94,6 +115,10 @@ module mxint_cast #(
 
   end
 
+  // =============================
+  // Handshake Signals
+  // =============================
+
   join2 join_inst (
       .data_in_ready ({buffer_data_for_out_ready, log2_max_value_ready}),
       .data_in_valid ({buffer_data_for_out_valid, log2_max_value_valid}),
@@ -101,7 +126,10 @@ module mxint_cast #(
       .data_out_ready(data_out_ready)
   );
 
-  //Compute edata_out
+  // =============================
+  // Compute Output Exponent
+  // =============================
+
   assign edata_out_full = log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT;
 
   always_comb begin
@@ -114,11 +142,19 @@ module mxint_cast #(
 
   end
 
+  // =============================
+  // Compute Shift Value
+  // =============================
+
   localparam SHIFT_WIDTH = max($clog2(IN_MAN_WIDTH), $clog2(OUT_MAN_WIDTH), 0) + 1;
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
   assign shift_value = edata_out_full - edata_out - log2_max_value + OUT_MAN_WIDTH - 2;
 
-  // Shift and clamp output mantissa
+
+  // =============================
+  // Compute Output Mantissa
+  // =============================
+
   for (genvar i = 0; i < BLOCK_SIZE; i++) begin
 
     always_comb begin
@@ -140,6 +176,10 @@ module mxint_cast #(
   end
 
 endmodule
+
+// =============================
+// Max function
+// =============================
 
 function [31:0] max;
   input [31:0] x, y, z;
