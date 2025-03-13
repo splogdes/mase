@@ -120,7 +120,7 @@ class LinearTB(Testbench):
         self.data_out_0_monitor.ready.value = 1
 
         inputs = self.generate_inputs()
-        # exp_out = self.model(inputs)
+        exp_out = self.model(inputs)
 
         # * Load the inputs driver
         self.log.info(f"Processing inputs: {inputs}")
@@ -172,20 +172,19 @@ class LinearTB(Testbench):
             self.bias_driver.load_driver(bias)
 
         # * Load the output monitor
-        # self.log.info(f"Processing outputs: {exp_out}")
-        # outs = self.preprocess_tensor_for_mxint(
-            # tensor=exp_out,
-            # config={
-                # "width": self.get_parameter("DATA_OUT_0_PRECISION_0"),
-                # "exponent_width": self.get_parameter("DATA_OUT_0_PRECISION_1"),
-            # },
-            # parallelism=[
-                # self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_1"),
-                # self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"),
-            # ],
-        # )
-        # breakpoint()
-        # self.data_out_0_monitor.load_monitor(outs)
+        self.log.info(f"Processing outputs: {exp_out}")
+        outs = self.preprocess_tensor_for_mxint(
+            tensor=exp_out,
+            config={
+                "width": self.get_parameter("DATA_OUT_0_PRECISION_0"),
+                "exponent_width": self.get_parameter("DATA_OUT_0_PRECISION_1"),
+            },
+            parallelism=[
+                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_1"),
+                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"),
+            ],
+        )
+        self.data_out_0_monitor.load_monitor(outs)
 
         await Timer(us, units="us")
         # assert self.data_out_0_monitor.exp_queue.empty()
