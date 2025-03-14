@@ -42,19 +42,21 @@ def _mxint_quantize(
     exponent_bias = 2 ** (exponent_width - 1) - 1
 
     per_block_exponent = torch.floor(torch.log2(per_block_max)) + exponent_bias
-    per_block_exponent = my_clamp(per_block_exponent, 0, 2 ** exponent_width - 1)
+    per_block_exponent = my_clamp(per_block_exponent, 0, 2**exponent_width - 1)
 
-    scaled_value = blocked_x / 2**(per_block_exponent - exponent_bias)
+    scaled_value = blocked_x / 2 ** (per_block_exponent - exponent_bias)
 
     element_max = 2 ** (width - 1) - 1
     shift = 2 ** (width - 2)
 
     # To advoid introducing a negative bias
-    quantized_value = my_clamp(my_round(scaled_value * shift), -element_max, element_max)
+    quantized_value = my_clamp(
+        my_round(scaled_value * shift), -element_max, element_max
+    )
 
     element_value = quantized_value / shift
 
-    mxint_value = element_value * 2**(per_block_exponent - exponent_bias)
+    mxint_value = element_value * 2 ** (per_block_exponent - exponent_bias)
 
     mxint_x = unblock(
         mxint_value,
