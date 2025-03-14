@@ -28,15 +28,15 @@ def mxint_quantize(x, width: int = 12, exponent_width: int = 6, exponent: int = 
     # exponent
     if exponent == None:
         exponent = torch.floor(torch.log2(x.abs().max())) + exponent_bias
-        exponent = torch.clamp(exponent, 0, 2 ** exponent_width - 1)
+        exponent = torch.clamp(exponent, 0, 2**exponent_width - 1)
     # mantissa
     element_max = 2 ** (width - 1) - 1
     shift = 2 ** (width - 2)
-    
-    mantissa = shift * x / 2**(exponent - exponent_bias)
+
+    mantissa = shift * x / 2 ** (exponent - exponent_bias)
     mantissa = torch.clamp(mantissa.floor(), -element_max, element_max)
     msfp_x = mantissa * 2 ** (exponent - exponent_bias) / shift
-    
+
     print(
         f"mxint_quantize: x = {x},\n"
         f"\twidth = {width},\n"
@@ -46,7 +46,7 @@ def mxint_quantize(x, width: int = 12, exponent_width: int = 6, exponent: int = 
         f"\tmantissa = {mantissa} = {[hex(int(man.item())) for man in mantissa]}\n"
         f"\texponent = {exponent} = {hex(int(exponent))}"
     )
-    
+
     return msfp_x, mantissa, exponent
 
 

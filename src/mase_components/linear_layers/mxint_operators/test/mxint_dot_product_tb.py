@@ -97,9 +97,9 @@ class MXIntDotProductTB(Testbench):
             # compute the quantized output value in "full" precision
             out_q = data_in @ weight
             # check that the relative error doesn't exceed some amoun
-            assert (abs((out_q - out_manual))/(out_q+1e-10)) < 1e-4, (
-                "Something went wrong when calculating the expected mantissa and exponents"
-            )
+            assert (
+                abs((out_q - out_manual)) / (out_q + 1e-10)
+            ) < 1e-4, "Something went wrong when calculating the expected mantissa and exponents"
 
             inputs.append((mdata_in.int().tolist(), edata_in.int().tolist()))
             weights.append((mweight.int().tolist(), eweight.int().tolist()))
@@ -162,4 +162,4 @@ if __name__ == "__main__":
             module_param_list=[get_config(base_seed + i) for i in range(num_configs)],
             jobs=10,
         )
-        print(f'Test seeds: \n{[(i,base_seed+i) for i in range(num_configs)]}')
+        print(f"Test seeds: \n{[(i,base_seed+i) for i in range(num_configs)]}")

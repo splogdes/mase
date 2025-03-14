@@ -46,7 +46,7 @@ class MXIntAccumulatorTB(Testbench):
             dut.data_out_0_valid,
             dut.data_out_0_ready,
             check=True,
-            signed=False
+            signed=False,
         )
 
     def generate_inputs(self):
@@ -74,7 +74,7 @@ class MXIntAccumulatorTB(Testbench):
         )
 
         tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
-        
+
         exp_outs = [(mout.int().tolist(), eout)]
 
         return tensor_inputs, exp_outs
