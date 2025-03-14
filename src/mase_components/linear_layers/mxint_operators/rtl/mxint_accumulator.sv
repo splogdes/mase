@@ -2,16 +2,7 @@
 /*
 Module      : mxint_accumulator
 Description : 
-  - This module implements an accumulator for MxInt.
-  - When receiving WIDTH_different exponent values, it adjusts the mantissa to a common bit-width before accumulating.
-  - The highest exponent is used as the reference, and smaller exponents shift their mantissas accordingly.
-  - The accumulated value is stored until the required depth is reached, at which point it is output.
-  - The exponent may increase based on the accumulation result.
-
-Features:
-  - Dynamic shifting of mantissas for exponent alignment.
-  - Controlled accumulation with a depth accum_count.
-  - Adaptive exponent update when needed.
+  - The accumulator is designed to accumulate a block of MxInt values.
 */
 
 module mxint_accumulator #(
@@ -40,21 +31,27 @@ module mxint_accumulator #(
     input  logic                                     data_out_0_ready
 );
 
-  localparam WIDTH_DIFF = DATA_OUT_0_PRECISION_0 - DATA_IN_0_PRECISION_0;
+  localparam RIGHT_PADDING = DATA_OUT_0_PRECISION_0 - DATA_IN_0_PRECISION_0 - $clog2(IN_DEPTH);
+  localparam LEFT_PADDING = $clog2(IN_DEPTH);
   localparam COUNTER_WIDTH = $clog2(IN_DEPTH);  // 1-bit wider so IN_DEPTH also fits.
 
+  localparam EXP_IN_BIAS = 2 ** (DATA_IN_0_PRECISION_1 - 1) - 1;
+  localparam EXP_OUT_BIAS = 2 ** (DATA_OUT_0_PRECISION_1 - 1) - 1;
 
   /* verilator lint_off WIDTH */
   assign data_in_0_ready  = (accum_count != IN_DEPTH) || data_out_0_ready;
   assign data_out_0_valid = (accum_count == IN_DEPTH);
   /* verilator lint_on WIDTH */
 
+  logic signed [DATA_OUT_0_PRECISION_0 - 1:0] padded_mdata_in_0  [BLOCK_SIZE - 1:0];
   logic signed [DATA_OUT_0_PRECISION_0 - 1:0] shifted_mdata_in_0 [BLOCK_SIZE - 1:0];
   logic signed [DATA_OUT_0_PRECISION_0 - 1:0] shifted_mdata_out_0[BLOCK_SIZE - 1:0];
   logic signed [DATA_OUT_0_PRECISION_0 - 1:0] tmp_accumulator    [BLOCK_SIZE - 1:0];
 
   logic                                       exponent_increment [BLOCK_SIZE - 1:0];
-  logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent;
+
+  logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent_d;
+  logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent_q;
 
   logic        [             COUNTER_WIDTH:0] accum_count;
   logic signed [ DATA_IN_0_PRECISION_1 - 1:0] shift;
@@ -65,10 +62,9 @@ module mxint_accumulator #(
   // Exponent Calculation
   // =============================
   assign no_reg_value =(accum_count == 0 || (data_out_0_valid && data_out_0_ready && data_in_0_valid));
-  assign max_exponent = (edata_out_0 < edata_in_0) ? edata_in_0 : edata_out_0;
-  assign shift = edata_out_0 - edata_in_0;
+  assign max_exponent_d = (max_exponent_q < edata_in_0) ? edata_in_0 : max_exponent_q;
+  assign shift = max_exponent_d - edata_in_0;
 
-  // count
   always_ff @(posedge clk)
     if (rst) accum_count <= 0;
     else begin
@@ -90,42 +86,22 @@ module mxint_accumulator #(
 
     always_comb begin
 
-      if (shift > 0) begin
-        shifted_mdata_in_0[i] = no_reg_value ? mdata_in_0[i] <<< (WIDTH_DIFF - 1) : mdata_in_0[i] <<< (shift + WIDTH_DIFF - 1);
-        shifted_mdata_out_0[i] = mdata_out_0[i] >>> 1;
+      padded_mdata_in_0[i] = {
+        {LEFT_PADDING{mdata_in_0[i][DATA_IN_0_PRECISION_0-1]}}, mdata_in_0[i], {RIGHT_PADDING{1'b0}}
+      };
+
+      if (no_reg_value) begin
+        shifted_mdata_in_0[i] = padded_mdata_in_0[i];
+      end else if (shift > 0) begin
+        shifted_mdata_in_0[i]  = padded_mdata_in_0[i] >>> shift;
+        shifted_mdata_out_0[i] = mdata_out_0[i];
       end else begin
-        shifted_mdata_in_0[i]  = mdata_in_0[i] <<< (WIDTH_DIFF - 1);
-        shifted_mdata_out_0[i] = mdata_out_0[i] >>> (-shift + 1);
-      end
-
-      tmp_accumulator[i] = shifted_mdata_out_0[i] + shifted_mdata_in_0[i];
-
-      if ((tmp_accumulator[i] < 2 ** (DATA_OUT_0_PRECISION_0 - 2) - 1) && (tmp_accumulator[i] > -2 ** (DATA_OUT_0_PRECISION_0 - 2) + 1))
-        exponent_increment[i] = 1;
-      else exponent_increment[i] = 0;
-
-    end
-
-  end
-
-
-  // =============================
-  // Determine If Exponent Needs Increment
-  // =============================
-
-  logic increase_exponent;
-
-  always_comb begin
-    increase_exponent = 0;
-    
-    for (int i = 0; i < BLOCK_SIZE; i++) begin
-
-      if (exponent_increment[i]) begin
-        increase_exponent = 1;
-        break;
+        shifted_mdata_in_0[i]  = padded_mdata_in_0[i];
+        shifted_mdata_out_0[i] = mdata_out_0[i] >>> -shift;
       end
 
     end
+
   end
 
   // =============================
@@ -140,12 +116,12 @@ module mxint_accumulator #(
         if (data_out_0_valid) begin
           if (data_out_0_ready) begin
 
-            if (data_in_0_valid) mdata_out_0[i] <= shifted_mdata_in_0[i] <<< 1;
+            if (data_in_0_valid) mdata_out_0[i] <= shifted_mdata_in_0[i];
             else mdata_out_0[i] <= '0;
 
           end
         end else if (data_in_0_valid && data_in_0_ready)
-          mdata_out_0[i] <= tmp_accumulator[i] <<< (increase_exponent ? 0 : 1);
+          mdata_out_0[i] <= shifted_mdata_out_0[i] + shifted_mdata_in_0[i];
       end
     end
   end
@@ -153,14 +129,30 @@ module mxint_accumulator #(
   // =============================
   // Exponent Output Update Logic
   // =============================
-  always_ff @(posedge clk)
-    if (rst) edata_out_0 <= '0;
-    else if (data_out_0_valid) begin
+
+  always_ff @(posedge clk) begin
+
+    if (rst) begin
+      edata_out_0 <= '0;
+      max_exponent_q <= '0;
+
+    end else if (data_out_0_valid) begin
       if (data_out_0_ready) begin
-        if (data_in_0_valid) edata_out_0 <= edata_in_0;
-        else edata_out_0 <= '0;
+
+        if (data_in_0_valid) begin
+          edata_out_0 <= edata_in_0;
+          max_exponent_q <= edata_in_0;
+        end else begin
+          edata_out_0 <= '0;
+          max_exponent_q <= '0;
+        end
+
       end
-    end else if (data_in_0_valid && data_in_0_ready)
-      edata_out_0 <= max_exponent + increase_exponent;
+    end else if (data_in_0_valid && data_in_0_ready) begin
+      max_exponent_q <= max_exponent_d;
+      edata_out_0 <= max_exponent_d - EXP_IN_BIAS + EXP_OUT_BIAS + LEFT_PADDING;
+    end
+
+  end
 
 endmodule
