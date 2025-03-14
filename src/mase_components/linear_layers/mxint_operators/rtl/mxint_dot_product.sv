@@ -31,6 +31,11 @@ module mxint_dot_product #(
     output data_out_0_valid,
     input data_out_0_ready
 );
+  // Exponent Biases
+  localparam DATA_IN_BIAS = 2 ** (DATA_IN_0_PRECISION_1 - 1) - 1;
+  localparam WEIGHT_BIAS = 2 ** (WEIGHT_PRECISION_1 - 1) - 1;
+  localparam DATA_OUT_BIAS = 2 ** (DATA_OUT_0_PRECISION_1 - 1) - 1;
+
   logic [DATA_OUT_0_PRECISION_0-1:0] mdp [BLOCK_SIZE-1:0];
   logic [DATA_OUT_0_PRECISION_1-1:0] edp;
   logic mdp_valid, mdp_ready;
@@ -115,7 +120,7 @@ module mxint_dot_product #(
       .empty(),
       .full()
   );
-  assign edata_out_0 = buffer_eweight + buffer_edata_in_0;
+  assign edata_out_0 = ($signed(buffer_eweight - WEIGHT_BIAS) + $signed(buffer_edata_in_0 - DATA_IN_BIAS)) + DATA_OUT_BIAS;
   fixed_dot_product #(
       .IN_WIDTH(DATA_IN_0_PRECISION_0),
       .WEIGHT_WIDTH(WEIGHT_PRECISION_0),
