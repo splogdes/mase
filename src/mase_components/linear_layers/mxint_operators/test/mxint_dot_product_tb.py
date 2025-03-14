@@ -2,6 +2,7 @@
 
 # This script tests the fixed point linear
 import os, logging
+import sys
 
 import cocotb
 from cocotb.log import SimLog
@@ -22,6 +23,7 @@ import random
 
 logger = logging.getLogger("testbench")
 logger.setLevel(logging.DEBUG)
+
 
 class MXIntDotProductTB(Testbench):
     def __init__(self, dut, num) -> None:
@@ -78,23 +80,27 @@ class MXIntDotProductTB(Testbench):
             in_man_w = self.dut.DATA_IN_0_PRECISION_0.value
             out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
 
-            # compute the mantissa 
-            mdp_out = (mdata_in @ mweight).int()
+            # compute the mantissa
+            mdp_out = (mdata_in @ mweight).floor()
+
             # take the mod since the monitor comparison is unsigned
-            mdp_out_unsigned = mdp_out%(2**out_man_w)
+            mdp_out_unsigned = int(mdp_out) % (2**out_man_w)
             # adjust the exponent by the biases of the different widths
             edp_out = (edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out
             # compute the result based on the exponent and mantissa found above
-            out_manual = (mdp_out * 2 ** (-(w_man_w + in_man_w - 4))) * (2 ** (edp_out - ebias_out))
-
+            out_manual = (mdp_out * 2 ** (-(w_man_w + in_man_w - 4))) * (
+                2 ** (edp_out - ebias_out)
+            )
+            # breakpoint()
             # compute the quantized output value in "full" precision
             out_q = data_in @ weight
-            assert out_q == out_manual, "Something went wrong when calculating the expected mantissa and exponents"
-
+            assert out_q == out_manual, (
+                "Something went wrong when calculating the expected mantissa and exponents"
+            )
 
             inputs.append((mdata_in.int().tolist(), edata_in.int().tolist()))
             weights.append((mweight.int().tolist(), eweight.int().tolist()))
-            exp_outputs.append((mdp_out_unsigned.tolist(), edp_out.int().tolist()))
+            exp_outputs.append((mdp_out_unsigned, int(edp_out)))
         print(inputs)
         print(weights)
         print(exp_outputs)
@@ -127,23 +133,30 @@ async def test(dut):
     await tb.run_test()
 
 
-def get_config():
+def get_config(seed):
+    random.seed(seed)
     return {
-                "DATA_IN_0_PRECISION_0": random.randint(2,16),
-                "DATA_IN_0_PRECISION_1": random.randint(2,16),
-                "WEIGHT_PRECISION_0": random.randint(2,16),
-                "WEIGHT_PRECISION_1": random.randint(2,16),
-                "BLOCK_SIZE": random.randint(2,16),
-            }
+        "DATA_IN_0_PRECISION_0": random.randint(2, 16),
+        "DATA_IN_0_PRECISION_1": random.randint(2, 16),
+        "WEIGHT_PRECISION_0": random.randint(2, 16),
+        "WEIGHT_PRECISION_1": random.randint(2, 16),
+        "BLOCK_SIZE": random.randint(2, 16),
+    }
+
 
 if __name__ == "__main__":
-    seed = os.getenv('COCOTB_SEED', default=10)
-    num_configs = os.getenv('NUM_CONFIGS', default=10)
-    
-    torch.manual_seed(seed)
-    random.seed(seed)
-    mase_runner(
-        trace=True,
-        module_param_list=[get_config() for _ in range(num_configs)],
-        jobs=3
-    )
+    torch.manual_seed(10)
+    seed = os.getenv("COCOTB_SEED")
+
+    if seed is not None:
+        seed = int(seed)
+        mase_runner(trace=True, module_param_list=[get_config(seed)])
+    else:
+        num_configs = int(os.getenv("NUM_CONFIGS", default=10))
+        base_seed = random.randrange(sys.maxsize)
+        mase_runner(
+            trace=True,
+            module_param_list=[get_config(base_seed + i) for i in range(num_configs)],
+            jobs=10,
+        )
+        print(f'Test seeds: \n{[(i,base_seed+i) for i in range(num_configs)]}')
