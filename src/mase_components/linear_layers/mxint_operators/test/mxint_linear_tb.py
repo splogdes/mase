@@ -101,6 +101,8 @@ class LinearTB(Testbench):
         from utils import pack_tensor_to_mx_listed_chunk
 
         (qtensor, mtensor, etensor) = block_mxint_quant(tensor, config, parallelism)
+        self.log.info(f"Mantissa Tensor: {mtensor}")
+        self.log.info(f"Exponenr Tensor: {etensor}")
         tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
         return tensor_inputs
 
@@ -200,44 +202,44 @@ def get_fixed_linear_config(kwargs={}):
     # else
     #   weight0 = in0
     # currently, we only consider the transposed situation
-    # config = {
-    #     "HAS_BIAS": 1,
-    #     "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
-    #     "DATA_IN_0_TENSOR_SIZE_DIM_1": 2,
-    #     "DATA_IN_0_PARALLELISM_DIM_0": 2,
-    #     "DATA_IN_0_PARALLELISM_DIM_1": 1,
-    #     "WEIGHT_TENSOR_SIZE_DIM_0": 2,
-    #     "WEIGHT_TENSOR_SIZE_DIM_1": 2,
-    #     "WEIGHT_PARALLELISM_DIM_0": 2,
-    #     "WEIGHT_PARALLELISM_DIM_1": 1,
-    #     "DATA_IN_0_PRECISION_0": 8,
-    #     "DATA_IN_0_PRECISION_1": 4,
-    #     "WEIGHT_PRECISION_0": 8,
-    #     "WEIGHT_PRECISION_1": 4,
-    #     "BIAS_PRECISION_0": 8,
-    #     "BIAS_PRECISION_1": 4,
-    #     "DATA_OUT_0_PRECISION_0": 10,
-    #     "DATA_OUT_0_PRECISION_1": 4,
-    # }
     config = {
-        "HAS_BIAS": 1,
-        "DATA_IN_0_TENSOR_SIZE_DIM_0": 32,
-        "DATA_IN_0_TENSOR_SIZE_DIM_1": 16,
-        "DATA_IN_0_PARALLELISM_DIM_0": 4,
-        "DATA_IN_0_PARALLELISM_DIM_1": 4,
-        "WEIGHT_TENSOR_SIZE_DIM_0": 32,
-        "WEIGHT_TENSOR_SIZE_DIM_1": 16,
-        "WEIGHT_PARALLELISM_DIM_0": 4,
-        "WEIGHT_PARALLELISM_DIM_1": 4,
-        "DATA_IN_0_PRECISION_0": 9,
+        "HAS_BIAS": 0,
+        "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
+        "DATA_IN_0_TENSOR_SIZE_DIM_1": 2,
+        "DATA_IN_0_PARALLELISM_DIM_0": 2,
+        "DATA_IN_0_PARALLELISM_DIM_1": 1,
+        "WEIGHT_TENSOR_SIZE_DIM_0": 2,
+        "WEIGHT_TENSOR_SIZE_DIM_1": 2,
+        "WEIGHT_PARALLELISM_DIM_0": 2,
+        "WEIGHT_PARALLELISM_DIM_1": 1,
+        "DATA_IN_0_PRECISION_0": 8,
         "DATA_IN_0_PRECISION_1": 4,
         "WEIGHT_PRECISION_0": 8,
-        "WEIGHT_PRECISION_1": 3,
+        "WEIGHT_PRECISION_1": 4,
         "BIAS_PRECISION_0": 8,
         "BIAS_PRECISION_1": 4,
-        "DATA_OUT_0_PRECISION_0": 12,
+        "DATA_OUT_0_PRECISION_0": 10,
         "DATA_OUT_0_PRECISION_1": 4,
     }
+    # config = {
+    #     "HAS_BIAS": 1,
+    #     "DATA_IN_0_TENSOR_SIZE_DIM_0": 32,
+    #     "DATA_IN_0_TENSOR_SIZE_DIM_1": 16,
+    #     "DATA_IN_0_PARALLELISM_DIM_0": 4,
+    #     "DATA_IN_0_PARALLELISM_DIM_1": 4,
+    #     "WEIGHT_TENSOR_SIZE_DIM_0": 32,
+    #     "WEIGHT_TENSOR_SIZE_DIM_1": 16,
+    #     "WEIGHT_PARALLELISM_DIM_0": 4,
+    #     "WEIGHT_PARALLELISM_DIM_1": 4,
+    #     "DATA_IN_0_PRECISION_0": 9,
+    #     "DATA_IN_0_PRECISION_1": 4,
+    #     "WEIGHT_PRECISION_0": 8,
+    #     "WEIGHT_PRECISION_1": 3,
+    #     "BIAS_PRECISION_0": 8,
+    #     "BIAS_PRECISION_1": 4,
+    #     "DATA_OUT_0_PRECISION_0": 12,
+    #     "DATA_OUT_0_PRECISION_1": 4,
+    # }
     config.update(kwargs)
     return config
 
@@ -249,7 +251,6 @@ def test_fixed_linear_smoke():
     """
     mase_runner(
         trace=True,
-        extra_build_args=["--trace-depth", "8"],
         module_param_list=[
             get_fixed_linear_config(),
             # noticed here if change WEIGHT_PRE_TRANSPOSED also need to change the DIM_SIZE to match ACTIVATION
@@ -286,10 +287,23 @@ def test_fixed_linear_regression():
                     "BIAS_PARALLELISM_DIM_0": 2,
                 }
             ),
+            # get_fixed_linear_config(
+            #     {
+            #         "HAS_BIAS": 1,
+            #         "DATA_IN_0_TENSOR_SIZE_DIM_0": 768,
+            #         "DATA_IN_0_PARALLELISM_DIM_0": 32,
+            #         "WEIGHT_TENSOR_SIZE_DIM_0": 768,
+            #         "WEIGHT_TENSOR_SIZE_DIM_1": 768,
+            #         "WEIGHT_PARALLELISM_DIM_0": 32,
+            #         "WEIGHT_PARALLELISM_DIM_1": 32,
+            #         "BIAS_TENSOR_SIZE_DIM_0": 768,
+            #         "BIAS_PARALLELISM_DIM_0": 32,
+            #     }
+            # ),
         ],
     )
 
 
 if __name__ == "__main__":
-    test_fixed_linear_smoke()
-    # test_fixed_linear_regression()
+    # test_fixed_linear_smoke()
+    test_fixed_linear_regression()
