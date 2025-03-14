@@ -91,7 +91,7 @@ module mxint_accumulator #(
       };
 
       if (no_reg_value) begin
-        shifted_mdata_in_0[i] = padded_mdata_in_0[i];
+        shifted_mdata_in_0[i]  = padded_mdata_in_0[i];
         shifted_mdata_out_0[i] = '0;
       end else if (shift > 0) begin
         shifted_mdata_in_0[i]  = padded_mdata_in_0[i] >>> shift;

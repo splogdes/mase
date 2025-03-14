@@ -122,7 +122,11 @@ module mxint_dot_product #(
       .empty(),
       .full()
   );
-  assign edata_out_0 = ($signed(buffer_eweight - WEIGHT_BIAS) + $signed(buffer_edata_in_0 - DATA_IN_BIAS)) + DATA_OUT_BIAS + FRAC_POINT_ADJ;
+  assign edata_out_0 = ($signed(
+      buffer_eweight - WEIGHT_BIAS
+  ) + $signed(
+      buffer_edata_in_0 - DATA_IN_BIAS
+  )) + DATA_OUT_BIAS + FRAC_POINT_ADJ;
   fixed_dot_product #(
       .IN_WIDTH(DATA_IN_0_PRECISION_0),
       .WEIGHT_WIDTH(WEIGHT_PRECISION_0),
