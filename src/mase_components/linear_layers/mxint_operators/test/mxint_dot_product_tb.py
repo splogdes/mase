@@ -23,9 +23,6 @@ import random
 logger = logging.getLogger("testbench")
 logger.setLevel(logging.DEBUG)
 
-torch.manual_seed(10)
-
-
 class MXIntDotProductTB(Testbench):
     def __init__(self, dut, num) -> None:
         super().__init__(dut, dut.clk, dut.rst)
@@ -80,21 +77,24 @@ class MXIntDotProductTB(Testbench):
             w_man_w = self.dut.WEIGHT_PRECISION_0.value
             in_man_w = self.dut.DATA_IN_0_PRECISION_0.value
             out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
-            expout = (edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out
-            mantout = mdata_in.int() @ mweight.int()
-            logger.debug(
-                f"expected value = {(mantout * 2 ** (-(w_man_w + in_man_w - 4))) * (2 ** (expout - ebias_out))}"
-            )
 
-            # compute the mantissa and take the mod since the comparison is unsigned
-            mdp_out = (mdata_in @ mweight).int()%(2**out_man_w)
+            # compute the mantissa 
+            mdp_out = (mdata_in @ mweight).int()
+            # take the mod since the monitor comparison is unsigned
+            mdp_out_unsigned = mdp_out%(2**out_man_w)
             # adjust the exponent by the biases of the different widths
             edp_out = (edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out
+            # compute the result based on the exponent and mantissa found above
+            out_manual = (mdp_out * 2 ** (-(w_man_w + in_man_w - 4))) * (2 ** (edp_out - ebias_out))
 
-            # logger.info(f"{data} @ {w} = {out}")
+            # compute the quantized output value in "full" precision
+            out_q = data_in @ weight
+            assert out_q == out_manual, "Something went wrong when calculating the expected mantissa and exponents"
+
+
             inputs.append((mdata_in.int().tolist(), edata_in.int().tolist()))
             weights.append((mweight.int().tolist(), eweight.int().tolist()))
-            exp_outputs.append((mdp_out.tolist(), edp_out.int().tolist()))
+            exp_outputs.append((mdp_out_unsigned.tolist(), edp_out.int().tolist()))
         print(inputs)
         print(weights)
         print(exp_outputs)
@@ -123,20 +123,27 @@ class MXIntDotProductTB(Testbench):
 
 @cocotb.test()
 async def test(dut):
-    tb = MXIntDotProductTB(dut, num=40)
+    tb = MXIntDotProductTB(dut, num=50)
     await tb.run_test()
 
 
-if __name__ == "__main__":
-    mase_runner(
-        trace=True,
-        module_param_list=[
-            {
+def get_config():
+    return {
                 "DATA_IN_0_PRECISION_0": random.randint(2,16),
                 "DATA_IN_0_PRECISION_1": random.randint(2,16),
                 "WEIGHT_PRECISION_0": random.randint(2,16),
                 "WEIGHT_PRECISION_1": random.randint(2,16),
                 "BLOCK_SIZE": random.randint(2,16),
-            },
-        ],
+            }
+
+if __name__ == "__main__":
+    seed = os.getenv('COCOTB_SEED', default=10)
+    num_configs = os.getenv('NUM_CONFIGS', default=10)
+    
+    torch.manual_seed(seed)
+    random.seed(seed)
+    mase_runner(
+        trace=True,
+        module_param_list=[get_config() for _ in range(num_configs)],
+        jobs=3
     )
