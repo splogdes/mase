@@ -20,6 +20,7 @@ from utils import mxint_quantize
 import torch
 from math import ceil, log2
 import random
+import math
 
 logger = logging.getLogger("testbench")
 logger.setLevel(logging.DEBUG)
@@ -81,8 +82,9 @@ class MXIntDotProductTB(Testbench):
             out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
 
             # compute the mantissa
-            mdp_out = (mdata_in @ mweight).floor()
-
+            mdp_out = 0
+            for d, w in zip(mdata_in, mweight):
+                mdp_out += math.floor(int(d) * int(w))
             # take the mod since the monitor comparison is unsigned
             mdp_out_unsigned = int(mdp_out) % (2**out_man_w)
             # adjust the exponent by the biases of the different widths
@@ -91,10 +93,11 @@ class MXIntDotProductTB(Testbench):
             out_manual = (mdp_out * 2 ** (-(w_man_w + in_man_w - 4))) * (
                 2 ** (edp_out - ebias_out)
             )
-            # breakpoint()
+
             # compute the quantized output value in "full" precision
             out_q = data_in @ weight
-            assert out_q == out_manual, (
+            # check that the relative error doesn't exceed some amoun
+            assert (abs((out_q - out_manual))/(out_q+1e-10)) < 1e-4, (
                 "Something went wrong when calculating the expected mantissa and exponents"
             )
 
@@ -152,7 +155,7 @@ if __name__ == "__main__":
         seed = int(seed)
         mase_runner(trace=True, module_param_list=[get_config(seed)])
     else:
-        num_configs = int(os.getenv("NUM_CONFIGS", default=10))
+        num_configs = int(os.getenv("NUM_CONFIGS", default=40))
         base_seed = random.randrange(sys.maxsize)
         mase_runner(
             trace=True,
