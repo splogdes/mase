@@ -4,6 +4,7 @@ import os
 import struct
 import time
 
+from chop.passes.graph.transforms.verilog.mxint_bram_template import mxint_template
 import torch
 
 from chop.passes.graph.utils import vf, v2p, get_module_by_name, init_project
@@ -29,13 +30,58 @@ def _cap(name):
 
 
 def emit_parameters_in_mem_internal(node, param_name, file_name, data_name):
+    verilog_param_name = param_name.replace(".", "_")
+    match node.meta["mase"].parameters["common"]["args"][verilog_param_name]["type"]:
+        case "fixed":
+            emit_parameters_in_mem_internal_fixed_point(
+                node, verilog_param_name, file_name, data_name
+            )
+        case "mxint":
+            emit_parameters_in_mem_internal_mxint(
+                node, verilog_param_name, file_name, data_name
+            )
+        case unsupported_type:
+            raise NotImplementedError(f"Unsupported BRAM data-type {unsupported_type}")
+
+
+def emit_parameters_in_mem_internal_mxint(
+    node, verilog_param_name, file_name, data_name
+):
+    node_type_info = node.meta["mase"].parameters["common"]["args"][verilog_param_name]
+    node_verilog_info = node.meta["mase"].parameters["hardware"]["verilog_param"]
+
+    total_size = math.prod(node_type_info["shape"])
+
+    out_size = int(
+        node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]
+        * node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
+    )
+
+    out_depth = int((total_size + out_size - 1) / out_size)
+
+    mantissa_width = int(node_type_info["precision"][0])
+    exponent_width = int(node_type_info["precision"][1])
+
+    node_param_name = f"{vf(node.name)}_{verilog_param_name}"
+
+    rom_str = mxint_template.format(
+        node_param_name=node_param_name,
+        date_time=time.strftime("%d/%m/%Y %H:%M:%S"),
+        edwith=exponent_width,
+        emem_size=out_size,
+        mwidth=mantissa_width,
+    )
+
+
+def emit_parameters_in_mem_internal_fixed_point(
+    node, verilog_param_name, file_name, data_name
+):
     """
     Emit single-port ROM hardware components for each parameter
     (Mostly because Vivado does not support string type parameters...)
     """
     # ! TO DO: currently emitting too many parameters
 
-    verilog_param_name = param_name.replace(".", "_")
     total_size = math.prod(
         node.meta["mase"].parameters["common"]["args"][verilog_param_name]["shape"]
     )
@@ -64,12 +110,12 @@ def emit_parameters_in_mem_internal(node, param_name, file_name, data_name):
 // =====================================
 //     Mase Hardware
 //     Parameter: {node_param_name}
-//     {time.strftime('%d/%m/%Y %H:%M:%S')}
+//     {time.strftime("%d/%m/%Y %H:%M:%S")}
 // =====================================
 
 `timescale 1 ns / 1 ps
 module {node_param_name}_rom #(
-  parameter DWIDTH = {out_size*out_width},
+  parameter DWIDTH = {out_size * out_width},
   parameter MEM_SIZE = {out_depth},
   parameter AWIDTH = $clog2(MEM_SIZE) + 1
 ) (
@@ -96,7 +142,7 @@ endmodule
 
 `timescale 1 ns / 1 ps
 module {node_param_name} #(
-  parameter DATA_WIDTH = 32'd{out_width*out_size},
+  parameter DATA_WIDTH = 32'd{out_width * out_size},
   parameter ADDR_RANGE = 32'd{out_depth},
   parameter ADDR_WIDTH = $clog2(ADDR_RANGE) + 1
 ) (
@@ -385,9 +431,9 @@ def emit_parameters_in_mem_hls(node, param_name, file_name, data_name):
         node.meta["mase"].parameters["common"]["args"][param_name]["shape"]
     )
     out_size = iceil(total_size / out_depth)
-    assert (
-        total_size % out_depth == 0
-    ), f"Cannot partition imperfect size for now = {total_size} / {out_depth}."
+    assert total_size % out_depth == 0, (
+        f"Cannot partition imperfect size for now = {total_size} / {out_depth}."
+    )
     # Assume the first index is the total width
     out_width = node.meta["mase"].parameters["hardware"]["verilog_param"][
         "{}_WIDTH".format(param_name.upper())
@@ -406,7 +452,7 @@ def emit_parameters_in_mem_hls(node, param_name, file_name, data_name):
 
 `timescale 1 ns / 1 ps
 module {node_param_name}_rom #(
-  parameter DWIDTH = {out_size*out_width},
+  parameter DWIDTH = {out_size * out_width},
   parameter MEM_SIZE = {out_depth},
   parameter AWIDTH = $clog2(MEM_SIZE) + 1
 ) (
@@ -433,7 +479,7 @@ endmodule
 
 `timescale 1 ns / 1 ps
 module {node_param_name}_source #(
-  parameter DATA_WIDTH = 32'd{out_width*out_size},
+  parameter DATA_WIDTH = 32'd{out_width * out_size},
   parameter ADDR_RANGE = 32'd{out_depth},
   parameter ADDR_WIDTH = $clog2(ADDR_RANGE) + 1
 ) (
