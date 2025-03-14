@@ -73,18 +73,6 @@ class MXIntDotProductTB(Testbench):
                 int(self.dut.WEIGHT_PRECISION_1),
             )
 
-            # print(self.dut.DATA_OUT_0_PRECISION_0, self.dut.DATA_OUT_0_PRECISION_1)
-            # out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
-            # print(ebias_out, ebias_data, ebias_weight)
-
-            # logger.info(f"expected mantissa out {mantout}, expout = {(edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out}")
-            # logger.info(f"expected value = {(mdp_out*2**(-(self.dut.DATA_OUT_0_PRECISION_0.value-2))) * (2**(edp_out - ebias_out))}")
-            # data_mant_w = self.dut.DATA_IN_0_PRECISION_0.value
-            # data_exp_w = self.dut.DATA_IN_0_PRECISION_1.value
-
-            # print(2**(edata_in - ebias_data) * mdata_in.int() / (2 **(data_mant_w-2)))
-            # breakpoint()
-
             ebias_data = (2 ** (self.dut.DATA_IN_0_PRECISION_1.value - 1)) - 1
             ebias_weight = (2 ** (self.dut.WEIGHT_PRECISION_1.value - 1)) - 1
             ebias_out = (2 ** (self.dut.DATA_OUT_0_PRECISION_1.value - 1)) - 1
