@@ -52,6 +52,7 @@ class MXIntDotProductTB(Testbench):
             dut.data_out_0_valid,
             dut.data_out_0_ready,
             check=True,
+            signed=False,
         )
 
     def generate_inputs(self):
@@ -59,23 +60,53 @@ class MXIntDotProductTB(Testbench):
         weights = []
         exp_outputs = []
         for _ in range(self.num):
-            data = torch.rand(int(self.dut.BLOCK_SIZE))
+            data = torch.randn(int(self.dut.BLOCK_SIZE))
             (data_in, mdata_in, edata_in) = mxint_quantize(
                 data,
                 int(self.dut.DATA_IN_0_PRECISION_0),
                 int(self.dut.DATA_IN_0_PRECISION_1),
             )
-            w = torch.rand(int(self.dut.BLOCK_SIZE))
+            w = torch.randn(int(self.dut.BLOCK_SIZE))
             (weight, mweight, eweight) = mxint_quantize(
                 w,
                 int(self.dut.WEIGHT_PRECISION_0),
                 int(self.dut.WEIGHT_PRECISION_1),
             )
-            mdp_out = mdata_in @ mweight
-            edp_out = edata_in + eweight
+
+            # print(self.dut.DATA_OUT_0_PRECISION_0, self.dut.DATA_OUT_0_PRECISION_1)
+            # out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
+            # print(ebias_out, ebias_data, ebias_weight)
+
+            # logger.info(f"expected mantissa out {mantout}, expout = {(edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out}")
+            # logger.info(f"expected value = {(mdp_out*2**(-(self.dut.DATA_OUT_0_PRECISION_0.value-2))) * (2**(edp_out - ebias_out))}")
+            # data_mant_w = self.dut.DATA_IN_0_PRECISION_0.value
+            # data_exp_w = self.dut.DATA_IN_0_PRECISION_1.value
+
+            # print(2**(edata_in - ebias_data) * mdata_in.int() / (2 **(data_mant_w-2)))
+            # breakpoint()
+
+            ebias_data = (2 ** (self.dut.DATA_IN_0_PRECISION_1.value - 1)) - 1
+            ebias_weight = (2 ** (self.dut.WEIGHT_PRECISION_1.value - 1)) - 1
+            ebias_out = (2 ** (self.dut.DATA_OUT_0_PRECISION_1.value - 1)) - 1
+
+            w_man_w = self.dut.WEIGHT_PRECISION_0.value
+            in_man_w = self.dut.DATA_IN_0_PRECISION_0.value
+            out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
+            expout = (edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out
+            mantout = mdata_in.int() @ mweight.int()
+            logger.debug(
+                f"expected value = {(mantout * 2 ** (-(w_man_w + in_man_w - 4))) * (2 ** (expout - ebias_out))}"
+            )
+
+            # compute the mantissa and take the mod since the comparison is unsigned
+            mdp_out = (mdata_in @ mweight).int()%(2**out_man_w)
+            # adjust the exponent by the biases of the different widths
+            edp_out = (edata_in - ebias_data) + (eweight - ebias_weight) + ebias_out
+
+            # logger.info(f"{data} @ {w} = {out}")
             inputs.append((mdata_in.int().tolist(), edata_in.int().tolist()))
             weights.append((mweight.int().tolist(), eweight.int().tolist()))
-            exp_outputs.append((mdp_out.int().tolist(), edp_out.int().tolist()))
+            exp_outputs.append((mdp_out.tolist(), edp_out.int().tolist()))
         print(inputs)
         print(weights)
         print(exp_outputs)
@@ -88,6 +119,8 @@ class MXIntDotProductTB(Testbench):
 
         logger.info(f"generating inputs")
         inputs, weights, exp_outputs = self.generate_inputs()
+
+        # self.log.info(f"inputs: {inputs}\n{}")
 
         # Load the inputs driver
         self.data_in_0_driver.load_driver(inputs)
@@ -102,7 +135,7 @@ class MXIntDotProductTB(Testbench):
 
 @cocotb.test()
 async def test(dut):
-    tb = MXIntDotProductTB(dut, num=20)
+    tb = MXIntDotProductTB(dut, num=40)
     await tb.run_test()
 
 
@@ -111,11 +144,11 @@ if __name__ == "__main__":
         trace=True,
         module_param_list=[
             {
-                "DATA_IN_0_PRECISION_0": 8,
-                "DATA_IN_0_PRECISION_1": 4,
-                "WEIGHT_PRECISION_0": 7,
-                "WEIGHT_PRECISION_1": 4,
-                "BLOCK_SIZE": 4,
+                "DATA_IN_0_PRECISION_0": random.randint(2,16),
+                "DATA_IN_0_PRECISION_1": random.randint(2,16),
+                "WEIGHT_PRECISION_0": random.randint(2,16),
+                "WEIGHT_PRECISION_1": random.randint(2,16),
+                "BLOCK_SIZE": random.randint(2,16),
             },
         ],
     )
