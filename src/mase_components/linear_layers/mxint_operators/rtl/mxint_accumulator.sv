@@ -63,7 +63,7 @@ module mxint_accumulator #(
   // =============================
   assign no_reg_value =(accum_count == 0 || (data_out_0_valid && data_out_0_ready && data_in_0_valid));
   assign max_exponent_d = (max_exponent_q < edata_in_0) ? edata_in_0 : max_exponent_q;
-  assign shift = max_exponent_d - edata_in_0;
+  assign shift = max_exponent_q - edata_in_0;
 
   always_ff @(posedge clk)
     if (rst) accum_count <= 0;
