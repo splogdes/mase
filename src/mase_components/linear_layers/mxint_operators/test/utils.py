@@ -22,7 +22,7 @@ def mxint_quantize(x, width: int = 12, exponent_width: int = 6, exponent: int = 
     - `block_size`: a list of integers where each integer is the block size on that dimension. See function `block`.
 
     """
-    exponent_old = exponent
+
     exponent_bias = 2 ** (exponent_width - 1) - 1
 
     # exponent
@@ -35,19 +35,9 @@ def mxint_quantize(x, width: int = 12, exponent_width: int = 6, exponent: int = 
 
     mantissa = shift * x / 2 ** (exponent - exponent_bias)
     mantissa = torch.clamp(mantissa.floor(), -element_max, element_max)
-    msfp_x = mantissa * 2 ** (exponent - exponent_bias) / shift
+    mxint_x = mantissa * 2 ** (exponent - exponent_bias) / shift
 
-    print(
-        f"mxint_quantize: x = {x},\n"
-        f"\twidth = {width},\n"
-        f"\texponent_width = {exponent_width},\n"
-        f"\texponent_old = {exponent_old},\n"
-        f"\tmsfp_x = {msfp_x},\n"
-        f"\tmantissa = {mantissa} = {[hex(int(man.item())) for man in mantissa]}\n"
-        f"\texponent = {exponent} = {hex(int(exponent))}"
-    )
-
-    return msfp_x, mantissa, exponent
+    return mxint_x, mantissa, exponent
 
 
 def block_mxint_quant(tensor, q_config, parallelism):
