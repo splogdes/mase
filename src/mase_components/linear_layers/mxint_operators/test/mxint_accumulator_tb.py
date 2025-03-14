@@ -46,6 +46,7 @@ class MXIntAccumulatorTB(Testbench):
             dut.data_out_0_valid,
             dut.data_out_0_ready,
             check=True,
+            signed=False
         )
 
     def generate_inputs(self):
@@ -73,7 +74,8 @@ class MXIntAccumulatorTB(Testbench):
         )
 
         tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
-        exp_outs = [(mout.int().tolist(), int(eout))]
+        
+        exp_outs = [(mout.int().tolist(), eout)]
 
         return tensor_inputs, exp_outs
 
@@ -115,10 +117,10 @@ class MXIntAccumulatorTB(Testbench):
 
 @cocotb.test()
 async def repeated_mult_valid_backpressure(dut):
-    tb = MXIntAccumulatorTB(dut, 1)
+    tb = MXIntAccumulatorTB(dut, 10)
     tb.data_in_0_driver.set_valid_prob(0.7)
     cocotb.start_soon(bit_driver(dut.data_out_0_ready, dut.clk, 0.6))
-    await tb.run_test(samples=20, us=200)
+    await tb.run_test(samples=10, us=200)
 
 
 if __name__ == "__main__":

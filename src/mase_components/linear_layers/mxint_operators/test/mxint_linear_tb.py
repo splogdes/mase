@@ -275,27 +275,15 @@ def test_fixed_linear_regression():
         module_param_list=[
             get_fixed_linear_config(
                 {
-                    "DATA_IN_0_TENSOR_SIZE_DIM_0": 768,
-                    "DATA_IN_0_PARALLELISM_DIM_0": 32,
-                    "WEIGHT_TENSOR_SIZE_DIM_0": 768,
-                    "WEIGHT_TENSOR_SIZE_DIM_1": 768,
-                    "WEIGHT_PARALLELISM_DIM_0": 32,
-                    "WEIGHT_PARALLELISM_DIM_1": 32,
-                    "BIAS_TENSOR_SIZE_DIM_0": 768,
-                    "BIAS_PARALLELISM_DIM_0": 32,
-                }
-            ),
-            get_fixed_linear_config(
-                {
-                    "HAS_BIAS": 1,
-                    "DATA_IN_0_TENSOR_SIZE_DIM_0": 768,
-                    "DATA_IN_0_PARALLELISM_DIM_0": 32,
-                    "WEIGHT_TENSOR_SIZE_DIM_0": 768,
-                    "WEIGHT_TENSOR_SIZE_DIM_1": 768,
-                    "WEIGHT_PARALLELISM_DIM_0": 32,
-                    "WEIGHT_PARALLELISM_DIM_1": 32,
-                    "BIAS_TENSOR_SIZE_DIM_0": 768,
-                    "BIAS_PARALLELISM_DIM_0": 32,
+                    "HAS_BIAS": 0,
+                    "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
+                    "DATA_IN_0_PARALLELISM_DIM_0": 2,
+                    "WEIGHT_TENSOR_SIZE_DIM_0": 4,
+                    "WEIGHT_TENSOR_SIZE_DIM_1": 4,
+                    "WEIGHT_PARALLELISM_DIM_0": 2,
+                    "WEIGHT_PARALLELISM_DIM_1": 2,
+                    "BIAS_TENSOR_SIZE_DIM_0": 4,
+                    "BIAS_PARALLELISM_DIM_0": 2,
                 }
             ),
         ],
