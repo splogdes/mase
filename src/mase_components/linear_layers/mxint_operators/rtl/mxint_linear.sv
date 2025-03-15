@@ -221,72 +221,66 @@ module mxint_linear #(
   localparam FDP_EXP_BIAS = 2 ** (FDP_EXP_WIDTH_IN - 1) - 1;
   localparam BIAS_EXP_BIAS = 2 ** (BIAS_PRECISION_1 - 1) - 1;
 
-  logic [$clog2(IN_0_DEPTH_DIM_0 + HAS_BIAS):0]    accum_count;
-  logic                                 acc_ready;
-  logic                                 acc_valid;
-  logic                                 add_bias;
+  logic [$clog2(IN_0_DEPTH_DIM_0 + HAS_BIAS):0] accum_count;
+  logic acc_ready;
+  logic acc_valid;
+  logic add_bias;
 
-  logic [FDP_WIDTH-1:0]                 acc_mdata [DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0];
-  logic [FDP_EXP_WIDTH_IN-1:0]             acc_edata;
-  logic                                 acc_data_valid, acc_data_ready;
+  logic [FDP_WIDTH-1:0] acc_mdata[DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1 - 1:0];
+  logic [FDP_EXP_WIDTH_IN-1:0] acc_edata;
+  logic acc_data_valid, acc_data_ready;
 
   mxint_accumulator #(
-      .DATA_IN_0_PRECISION_0    (FDP_WIDTH),
-      .DATA_IN_0_PRECISION_1    (FDP_EXP_WIDTH_IN),
-      .IN_DEPTH                 (IN_0_DEPTH_DIM_0),
-      .HAS_BIAS                 (HAS_BIAS),
-      .BLOCK_SIZE               (DATA_OUT_0_PARALLELISM_DIM_1 * DATA_OUT_0_PARALLELISM_DIM_0)
-  ) accumulator_inst            (
-      .clk                      (clk),
-      .rst                      (rst),
-      .mdata_in_0               (acc_mdata),
-      .edata_in_0               (acc_edata),
-      .data_in_0_valid          (acc_valid),
-      .data_in_0_ready          (acc_ready),
-      .mdata_out_0              (acc_mdata_out),
-      .edata_out_0              (acc_edata_out),
-      .data_out_0_valid         (acc_data_out_valid),
-      .data_out_0_ready         (acc_data_out_ready),
-      .accum_count              (accum_count)
+      .DATA_IN_0_PRECISION_0(FDP_WIDTH),
+      .DATA_IN_0_PRECISION_1(FDP_EXP_WIDTH_IN),
+      .IN_DEPTH             (IN_0_DEPTH_DIM_0),
+      .HAS_BIAS             (HAS_BIAS),
+      .BLOCK_SIZE           (DATA_OUT_0_PARALLELISM_DIM_1 * DATA_OUT_0_PARALLELISM_DIM_0)
+  ) accumulator_inst (
+      .clk             (clk),
+      .rst             (rst),
+      .mdata_in_0      (acc_mdata),
+      .edata_in_0      (acc_edata),
+      .data_in_0_valid (acc_valid),
+      .data_in_0_ready (acc_ready),
+      .mdata_out_0     (acc_mdata_out),
+      .edata_out_0     (acc_edata_out),
+      .data_out_0_valid(acc_data_out_valid),
+      .data_out_0_ready(acc_data_out_ready),
+      .accum_count     (accum_count)
   );
 
   if (HAS_BIAS) begin : bias_cast
 
-    assign add_bias                         = accum_count == IN_0_DEPTH_DIM_0;
-    assign circular_bias_ready              = add_bias && acc_ready;
-    assign acc_data_in_ready                = !add_bias && acc_ready;
-    assign acc_valid                        = add_bias ? circular_bias_valid : acc_data_in_valid;
-    assign acc_edata                        = add_bias ? circular_ebias - BIAS_EXP_BIAS +  FDP_EXP_BIAS : acc_edata_in;
+    assign add_bias = accum_count == IN_0_DEPTH_DIM_0;
+    assign circular_bias_ready = add_bias && acc_ready;
+    assign acc_data_in_ready = !add_bias && acc_ready;
+    assign acc_valid = add_bias ? circular_bias_valid : acc_data_in_valid;
+    assign acc_edata = add_bias ? circular_ebias - BIAS_EXP_BIAS + FDP_EXP_BIAS : acc_edata_in;
 
-    always_comb
-    begin
-        for (int i = 0; i < DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1; i++)
-        begin
-            acc_mdata[i] = add_bias ? {circular_mbias[i], {(FDP_WIDTH - BIAS_PRECISION_0){1'b0}}} : acc_mdata_in[i];
-        end
+    always_comb begin
+      for (int i = 0; i < DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1; i++) begin
+        acc_mdata[i] = add_bias ? {circular_mbias[i], {(FDP_WIDTH - BIAS_PRECISION_0){1'b0}}} : acc_mdata_in[i];
+      end
     end
 
-  end
-  else
-  begin
-    assign acc_mdata                = acc_mdata_in;
-    assign acc_edata                = acc_edata_in;
-    assign acc_data_in_ready        = acc_ready;
-    assign acc_valid                = acc_data_in_valid;
+  end else begin
+    assign acc_mdata         = acc_mdata_in;
+    assign acc_edata         = acc_edata_in;
+    assign acc_data_in_ready = acc_ready;
+    assign acc_valid         = acc_data_in_valid;
   end
 
-  always_comb
-  begin
-    for (int i = 0; i < DATA_OUT_0_PARALLELISM_DIM_1 * DATA_OUT_0_PARALLELISM_DIM_0; i++)
-    begin
-        cast_mdata_out_0[i]         = acc_mdata_out[i];
+  always_comb begin
+    for (int i = 0; i < DATA_OUT_0_PARALLELISM_DIM_1 * DATA_OUT_0_PARALLELISM_DIM_0; i++) begin
+      cast_mdata_out_0[i] = acc_mdata_out[i];
     end
   end
 
-  assign acc_data_out_ready       = cast_data_out_0_ready;
-  assign cast_data_out_0_valid    = acc_data_out_valid;
-  assign cast_edata_out_0         = acc_edata_out;
-  assign bias_ready               = 1;
+  assign acc_data_out_ready    = cast_data_out_0_ready;
+  assign cast_data_out_0_valid = acc_data_out_valid;
+  assign cast_edata_out_0      = acc_edata_out;
+  assign bias_ready            = 1;
 
   mxint_cast #(
       .IN_MAN_WIDTH(LOSSLESS_OUT_WIDTH),
