@@ -56,12 +56,14 @@ def emit_parameters_in_mem_internal_mxint(
 
     total_size = math.prod(node_type_info["shape"])
 
-    block_size =  int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"])
+    block_size = int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"])
     # how many blocks are processed in parallel
-    parallelism = int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"])
+    parallelism = int(
+        node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
+    )
 
     out_size = block_size * parallelism
-    out_depth = int(total_size/ out_size)
+    out_depth = int(total_size / out_size)
 
     mantissa_width = int(node_type_info["precision"][0])
     exponent_width = int(node_type_info["precision"][1])
@@ -78,7 +80,7 @@ def emit_parameters_in_mem_internal_mxint(
         filename=data_name,
         verilog_param_name=_cap(verilog_param_name),
     )
-    
+
     with open(file_name, "w", encoding="utf-8") as outf:
         outf.write(rom_str)
     logger.debug(
