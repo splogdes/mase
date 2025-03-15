@@ -158,8 +158,8 @@ def get_config(seed):
         "IN_DEPTH": random.randint(1, 100),
     }
 
-
-if __name__ == "__main__":
+@pytest.mark.dev
+def run_random_tests():
     torch.manual_seed(10)
     seed = os.getenv("COCOTB_SEED")
 
@@ -175,3 +175,6 @@ if __name__ == "__main__":
             jobs=min(num_configs, 10),
         )
         print(f"Test seeds: \n{[(i, base_seed + i) for i in range(num_configs)]}")
+
+if __name__ == "__main__":
+    run_random_tests()

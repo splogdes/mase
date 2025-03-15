@@ -36,9 +36,7 @@ module mxint_accumulator #(
     output logic        [           COUNTER_WIDTH:0] accum_count
 );
 
-  localparam RIGHT_PADDING = DATA_OUT_0_PRECISION_0 - DATA_IN_0_PRECISION_0 - $clog2(
-      IN_DEPTH + HAS_BIAS
-  );
+  localparam RIGHT_PADDING = 2 ** DATA_IN_0_PRECISION_1;
   localparam LEFT_PADDING = $clog2(IN_DEPTH + HAS_BIAS);
 
   localparam EXP_IN_BIAS = 2 ** (DATA_IN_0_PRECISION_1 - 1) - 1;
@@ -59,7 +57,7 @@ module mxint_accumulator #(
   logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent_d;
   logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent_q;
 
-  logic signed [ DATA_IN_0_PRECISION_1 - 1:0] shift;
+  logic signed [DATA_OUT_0_PRECISION_1 - 1:0] shift;
   logic                                       no_reg_value;
 
 
