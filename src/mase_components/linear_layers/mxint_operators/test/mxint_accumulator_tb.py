@@ -72,7 +72,7 @@ class MXIntAccumulatorTB(Testbench):
             data_in_q.append(d_q.tolist())
             tensor_out.append((m_d.int().tolist(), int(e_d)))
 
-        # kinda jank but model the hardware directly since accumulator doesn't normalize
+        # kinda jank but have to model the hardware exactly since accumulator doesn't normalize
         left_padding = ceil(log2(self.get_parameter("IN_DEPTH")))
         right_padding = config_out["width"] - config_in["width"] - left_padding
         # logical model of what the block is doing
@@ -143,7 +143,10 @@ async def repeated_mult_valid_backpressure(dut):
     tb = MXIntAccumulatorTB(dut, 10)
     tb.data_in_0_driver.set_valid_prob(0.7)
     cocotb.start_soon(bit_driver(dut.data_out_0_ready, dut.clk, 0.6))
-    await tb.run_test(samples=100, us=200)
+    num_samples = 100
+    await tb.run_test(
+        samples=num_samples, us=0.05 * num_samples * tb.get_parameter("IN_DEPTH")
+    )
 
 
 def get_config(seed):
@@ -152,7 +155,7 @@ def get_config(seed):
         "DATA_IN_0_PRECISION_0": random.randint(2, 16),
         "DATA_IN_0_PRECISION_1": random.randint(2, 4),
         "BLOCK_SIZE": random.randint(2, 16),
-        "IN_DEPTH": random.randint(1, 5),
+        "IN_DEPTH": random.randint(1, 100),
     }
 
 
@@ -169,6 +172,6 @@ if __name__ == "__main__":
         mase_runner(
             trace=True,
             module_param_list=[get_config(base_seed + i) for i in range(num_configs)],
-            jobs=num_configs,
+            jobs=min(num_configs, 10),
         )
         print(f"Test seeds: \n{[(i, base_seed + i) for i in range(num_configs)]}")
