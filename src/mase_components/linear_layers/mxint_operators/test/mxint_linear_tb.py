@@ -203,7 +203,7 @@ def get_fixed_linear_config(kwargs={}):
     #   weight0 = in0
     # currently, we only consider the transposed situation
     config = {
-        "HAS_BIAS": 0,
+        "HAS_BIAS": 1,
         "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
         "DATA_IN_0_TENSOR_SIZE_DIM_1": 2,
         "DATA_IN_0_PARALLELISM_DIM_0": 2,
@@ -276,7 +276,7 @@ def test_fixed_linear_regression():
         module_param_list=[
             get_fixed_linear_config(
                 {
-                    "HAS_BIAS": 0,
+                    "HAS_BIAS": 1,
                     "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
                     "DATA_IN_0_PARALLELISM_DIM_0": 2,
                     "WEIGHT_TENSOR_SIZE_DIM_0": 4,
