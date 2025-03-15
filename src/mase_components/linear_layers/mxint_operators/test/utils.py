@@ -1,5 +1,6 @@
 import torch
 from chop.nn.quantizers import integer_floor_quantizer
+from chop.nn.quantized.modules import relu
 from functools import partial
 import torch.nn.functional as F
 from torch import Tensor
@@ -186,3 +187,37 @@ class MXIntLinear(_LinearBase):
             if self.out_quantizer is None:
                 return out
             return self.out_quantizer(out)
+
+
+class MXIntRelu(relu._ReLUBase):
+    def __init__(self, inplace: bool = False, config = None, bypass = False):
+        assert config is not None, "config is None!"
+        super().__init__(inplace)
+
+        self.config = config
+        self.bypass = bypass
+
+        base_quantizer = block_mxint_quant
+
+        x_width, x_exponent_width = (
+            config["data_in_width"],
+            config["data_in_exponent_width"],
+        )
+
+        x_p1, x_p0 = (
+            config["data_in_parallelism_dim_1"],
+            config["data_in_parallelism_dim_0"],
+        )
+
+        self.x_quantizer = partial(
+            base_quantizer,
+            q_config={"width": x_width, "exponent_width": x_exponent_width},
+            parallelism=[x_p1, x_p0],
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        if self.bypass:
+            return F.relu(x)
+        else:
+            y = F.relu(x, self.inplace)
+            return self.x_quantizer(x)
