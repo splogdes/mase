@@ -769,6 +769,9 @@ def emit_verilog_top_transform_pass(graph, pass_args={}):
     top_name = pass_args["top_name"] if "top_name" in pass_args.keys() else "top"
     init_project(project_dir)
     rtl_dir = os.path.join(project_dir, "hardware", "rtl")
+    import shutil
+    shutil.rmtree(rtl_dir)
+    os.mkdir(rtl_dir)
 
     top = VerilogEmitter(graph).emit(graph, top_name)
 

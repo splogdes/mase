@@ -51,18 +51,17 @@ def emit_parameters_in_mem_internal(node, param_name, file_name, data_name):
 def emit_parameters_in_mem_internal_mxint(
     node, verilog_param_name, file_name, data_name
 ):
-    return
     node_type_info = node.meta["mase"].parameters["common"]["args"][verilog_param_name]
     node_verilog_info = node.meta["mase"].parameters["hardware"]["verilog_param"]
 
     total_size = math.prod(node_type_info["shape"])
 
-    out_size = int(
-        node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]
-        * node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
-    )
+    block_size =  int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"])
+    # how many blocks are processed in parallel
+    parallelism = int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"])
 
-    out_depth = int((total_size + out_size - 1) / out_size)
+    out_size = block_size * parallelism
+    out_depth = int(total_size/ out_size)
 
     mantissa_width = int(node_type_info["precision"][0])
     exponent_width = int(node_type_info["precision"][1])
@@ -72,10 +71,21 @@ def emit_parameters_in_mem_internal_mxint(
     rom_str = mxint_template.format(
         node_param_name=node_param_name,
         date_time=time.strftime("%d/%m/%Y %H:%M:%S"),
-        edwith=exponent_width,
-        emem_size=out_size,
-        mwidth=mantissa_width,
+        e_width=exponent_width * parallelism,
+        e_mem_size=out_depth,
+        m_width=mantissa_width * out_size,
+        m_mem_size=out_depth,
+        filename=data_name,
+        verilog_param_name=_cap(verilog_param_name),
     )
+    
+    with open(file_name, "w", encoding="utf-8") as outf:
+        outf.write(rom_str)
+    logger.debug(
+        f"ROM module {verilog_param_name} successfully written into {file_name}"
+    )
+    assert os.path.isfile(file_name), "ROM Verilog generation failed."
+    # os.system(f"verible-verilog-format --inplace {file_name}")
 
 
 def emit_parameters_in_mem_internal_fixed_point(
@@ -135,7 +145,7 @@ module {node_param_name}_rom #(
   logic [DWIDTH-1:0] q0_t1;
 
   initial begin
-    $readmemh("{data_name}", ram);
+    $readmemh("{data_name}.dat", ram);
   end
 
   assign q0 = q0_t1;
@@ -501,7 +511,7 @@ module {node_param_name}_rom #(
   logic [DWIDTH-1:0] q0_t1;
 
   initial begin
-    $readmemh("{data_name}", ram);
+    $readmemh("{data_name}.dat", ram);
   end
 
   assign q0 = q0_t1;
