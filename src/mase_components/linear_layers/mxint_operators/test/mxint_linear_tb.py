@@ -223,11 +223,11 @@ def get_mxint_linear_config_random(seed, kwargs={}):
     MAX_BATCH_SIZE = 100
     random.seed(seed)
 
-    BLOCK_SIZE = random.randint(1,16)
-    PARALLELISM = random.randint(1,8)
-    BATCH_SIZE = random.randint(1, MAX_BATCH_SIZE//PARALLELISM) * PARALLELISM
-    IN_FEATURES = random.randint(1, MAX_IN_FEATURES//BLOCK_SIZE) * BLOCK_SIZE
-    OUT_FEATURES = random.randint(1, MAX_OUT_FEATURES//BLOCK_SIZE) * BLOCK_SIZE
+    BLOCK_SIZE = random.randint(1, 16)
+    PARALLELISM = random.randint(1, 8)
+    BATCH_SIZE = random.randint(1, MAX_BATCH_SIZE // PARALLELISM) * PARALLELISM
+    IN_FEATURES = random.randint(1, MAX_IN_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
+    OUT_FEATURES = random.randint(1, MAX_OUT_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
 
     MAX_MANTISSA = 16
     MAX_EXPONENT = 6
@@ -242,17 +242,18 @@ def get_mxint_linear_config_random(seed, kwargs={}):
         "WEIGHT_TENSOR_SIZE_DIM_1": OUT_FEATURES,
         "WEIGHT_PARALLELISM_DIM_0": BLOCK_SIZE,
         "WEIGHT_PARALLELISM_DIM_1": BLOCK_SIZE,
-        "DATA_IN_0_PRECISION_0": random.randint(2,MAX_MANTISSA),
-        "DATA_IN_0_PRECISION_1": random.randint(2,MAX_EXPONENT),
-        "WEIGHT_PRECISION_0": random.randint(2,MAX_MANTISSA),
-        "WEIGHT_PRECISION_1": random.randint(2,MAX_EXPONENT),
-        "BIAS_PRECISION_0": random.randint(2,MAX_MANTISSA),
-        "BIAS_PRECISION_1": random.randint(2,MAX_EXPONENT),
-        "DATA_OUT_0_PRECISION_0": random.randint(2,MAX_MANTISSA),
-        "DATA_OUT_0_PRECISION_1": random.randint(2,MAX_EXPONENT),
+        "DATA_IN_0_PRECISION_0": random.randint(2, MAX_MANTISSA),
+        "DATA_IN_0_PRECISION_1": random.randint(2, MAX_EXPONENT),
+        "WEIGHT_PRECISION_0": random.randint(2, MAX_MANTISSA),
+        "WEIGHT_PRECISION_1": random.randint(2, MAX_EXPONENT),
+        "BIAS_PRECISION_0": random.randint(2, MAX_MANTISSA),
+        "BIAS_PRECISION_1": random.randint(2, MAX_EXPONENT),
+        "DATA_OUT_0_PRECISION_0": random.randint(2, MAX_MANTISSA),
+        "DATA_OUT_0_PRECISION_1": random.randint(2, MAX_EXPONENT),
     }
     config.update(kwargs)
     return config
+
 
 def get_mxint_linear_config(kwargs={}):
     config = {
@@ -291,17 +292,24 @@ def test_mxint_linear_full_random():
 
     if seed is not None:
         seed = int(seed)
-        mase_runner(trace=True, module_param_list=[get_mxint_linear_config_random(seed, param_override)])
+        mase_runner(
+            trace=True,
+            module_param_list=[get_mxint_linear_config_random(seed, param_override)],
+        )
     else:
         num_configs = int(os.getenv("NUM_CONFIGS", default=5))
         base_seed = random.randrange(sys.maxsize)
         mase_runner(
             trace=True,
-            module_param_list=[get_mxint_linear_config_random(base_seed + i, param_override) for i in range(num_configs)],
+            module_param_list=[
+                get_mxint_linear_config_random(base_seed + i, param_override)
+                for i in range(num_configs)
+            ],
             jobs=min(num_configs, 10),
         )
         print(f"Test seeds: \n{[(i,base_seed+i) for i in range(num_configs)]}")
-    
+
+
 @pytest.mark.dev
 def test_mxint_linear():
     mase_runner(
