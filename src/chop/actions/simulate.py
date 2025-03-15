@@ -60,7 +60,8 @@ def simulate(
                 "-Wno-fatal",
                 "-Wno-lint",
                 "-Wno-style",
-                "--trace-fst",
+                "--trace",
+                # "--trace-fst",
                 "--trace-structs",
                 "--trace-depth",
                 str(trace_depth),
@@ -76,12 +77,12 @@ def simulate(
         ]
 
         build_start = time.time()
-
         runner.build(
             verilog_sources=sources,
             includes=includes,
             hdl_toplevel="top",
             build_args=build_args,
+            waves=waves,
             parameters=[],  # use default parameters,
         )
 
