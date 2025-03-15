@@ -153,7 +153,6 @@ module mxint_linear #(
   localparam FDP_EXP_WIDTH_IN =(WEIGHT_PRECISION_1 > DATA_IN_0_PRECISION_1)? WEIGHT_PRECISION_1 + 1: DATA_IN_0_PRECISION_1 + 1;
   localparam FDP_EXP_WIDTH_OUT = FDP_EXP_WIDTH_IN + $clog2($clog2(IN_0_DEPTH_DIM_0) + 1);
   localparam ACC_WIDTH = FDP_WIDTH + $clog2(IN_0_DEPTH_DIM_0) + 2 ** FDP_EXP_WIDTH_IN;
-//   localparam ACC_EXP_WIDTH = FDP_EXP_WIDTH_IN;
   localparam LOSSLESS_OUT_WIDTH = ACC_WIDTH + HAS_BIAS;
   localparam LOSSLESS_OUT_EXP_WIDTH = FDP_EXP_WIDTH_OUT;
   /* verilator lint_off UNUSEDSIGNAL */
