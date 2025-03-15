@@ -59,6 +59,17 @@ class MXIntDotProductTB(Testbench):
         inputs = []
         weights = []
         exp_outputs = []
+
+        ebias_data = (2 ** (self.dut.DATA_IN_0_PRECISION_1.value - 1)) - 1
+        ebias_weight = (2 ** (self.dut.WEIGHT_PRECISION_1.value - 1)) - 1
+        ebias_out = (2 ** (self.dut.DATA_OUT_0_PRECISION_1.value - 1)) - 1
+
+        w_man_w = self.dut.WEIGHT_PRECISION_0.value
+        in_man_w = self.dut.DATA_IN_0_PRECISION_0.value
+        out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
+
+        fractional_point_adjustment = out_man_w - 2 - ((w_man_w - 2) + (in_man_w - 2))
+
         for _ in range(self.num):
             data = torch.randn(int(self.dut.BLOCK_SIZE))
             (data_in, mdata_in, edata_in) = mxint_quantize(
@@ -72,14 +83,6 @@ class MXIntDotProductTB(Testbench):
                 int(self.dut.WEIGHT_PRECISION_0),
                 int(self.dut.WEIGHT_PRECISION_1),
             )
-
-            ebias_data = (2 ** (self.dut.DATA_IN_0_PRECISION_1.value - 1)) - 1
-            ebias_weight = (2 ** (self.dut.WEIGHT_PRECISION_1.value - 1)) - 1
-            ebias_out = (2 ** (self.dut.DATA_OUT_0_PRECISION_1.value - 1)) - 1
-
-            w_man_w = self.dut.WEIGHT_PRECISION_0.value
-            in_man_w = self.dut.DATA_IN_0_PRECISION_0.value
-            out_man_w = self.dut.DATA_OUT_0_PRECISION_0.value
 
             # compute the mantissa
             mdp_out = 0
@@ -96,14 +99,16 @@ class MXIntDotProductTB(Testbench):
 
             # compute the quantized output value in "full" precision
             out_q = data_in @ weight
-            # check that the relative error doesn't exceed some amoun
+            # check that the relative error doesn't exceed some amount
             assert (
-                abs((out_q - out_manual)) / (out_q + 1e-10)
-            ) < 1e-4, "Something went wrong when calculating the expected mantissa and exponents"
+                abs(out_q - out_manual) < 1e-6
+            ), "Something went wrong when calculating the expected mantissa and exponents"
 
             inputs.append((mdata_in.int().tolist(), edata_in.int().tolist()))
             weights.append((mweight.int().tolist(), eweight.int().tolist()))
-            exp_outputs.append((mdp_out_unsigned, int(edp_out)))
+            exp_outputs.append(
+                (mdp_out_unsigned, int(edp_out + fractional_point_adjustment))
+            )
         print(inputs)
         print(weights)
         print(exp_outputs)
