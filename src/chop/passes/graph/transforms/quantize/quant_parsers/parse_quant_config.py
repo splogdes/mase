@@ -429,9 +429,9 @@ def parse_node_config(config: dict, mase_op: str, strict: bool = True) -> dict:
         return config
     op_entries, op_optional_entries = MASE_OP_TO_ENTRIES[mase_op]
     assert isinstance(op_entries, tuple), f"op_entries must be a tuple: {op_entries}"
-    assert isinstance(op_optional_entries, tuple), (
-        f"op_optional_entries must be a tuple: {op_optional_entries}"
-    )
+    assert isinstance(
+        op_optional_entries, tuple
+    ), f"op_optional_entries must be a tuple: {op_optional_entries}"
     p_config = {}
     for entry in op_entries:
         entry_cp_fn = QUANT_ARITH_TO_CP_FN[config["name"]][entry]
