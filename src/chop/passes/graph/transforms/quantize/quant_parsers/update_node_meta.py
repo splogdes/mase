@@ -45,9 +45,9 @@ def update_arg(node, arg_name, dtype=None, precision=None, size=None):
     if dtype is not None:
         node.meta["mase"].parameters["common"]["args"][arg_name]["type"] = dtype
     if precision is not None:
-        node.meta["mase"].parameters["common"]["args"][arg_name]["precision"] = (
-            precision
-        )
+        node.meta["mase"].parameters["common"]["args"][arg_name][
+            "precision"
+        ] = precision
     if size is not None:
         node.meta["mase"].parameters["common"]["args"][arg_name]["size"] = size
 
@@ -84,11 +84,12 @@ def update_result(node, output_name, dtype=None, precision=None, size=None):
     if dtype is not None:
         node.meta["mase"].parameters["common"]["results"][output_name]["type"] = dtype
     if precision is not None:
-        node.meta["mase"].parameters["common"]["results"][output_name]["precision"] = (
-            precision
-        )
+        node.meta["mase"].parameters["common"]["results"][output_name][
+            "precision"
+        ] = precision
     if size is not None:
         node.meta["mase"].parameters["common"]["results"][output_name]["size"] = size
+
 
 def arg_exists(node, arg_name) -> bool:
     return arg_name in node.meta["mase"].parameters["common"]["args"]
@@ -121,19 +122,19 @@ def update_quant_meta_param(node, config: dict, mase_op: str) -> None:
     if quant_arith == "binary" or quant_arith == "binary_residual":
         update_result(
             node,
-            output_name='data_out_0',
+            output_name="data_out_0",
             dtype="binary",
             precision=[32, 0, 1],  # [bitwidth, stochastic, bipolar]
         )
     else:
         try:
-            precision = quant_arith_to_list_fn[quant_arith](config, 'data_out')
+            precision = quant_arith_to_list_fn[quant_arith](config, "data_out")
         except KeyError:
             # fallback to use data_in-config if data_out is not defined
-            precision = quant_arith_to_list_fn[quant_arith](config, 'data_in')
+            precision = quant_arith_to_list_fn[quant_arith](config, "data_in")
         update_result(
             node,
-            output_name='data_out_0',
+            output_name="data_out_0",
             dtype=quant_arith,
             precision=precision,
         )

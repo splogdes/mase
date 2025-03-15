@@ -31,21 +31,21 @@ def _cap(name):
 
 def get_node_type(node: fx.Node) -> supported_hw_quantisations:
     types: set[str] = set()
-    for _arg, type_info in node.meta['mase']['common']['args'].items():
+    for _arg, type_info in node.meta["mase"]["common"]["args"].items():
         match type_info:
             case dict():
-                types.add(type_info['type'])
+                types.add(type_info["type"])
             case _:
                 pass
     types = set(types)
     # types = set([match type_info: case dict(): type_info['type'] case _: None for _arg, type_info in node.meta['mase']['common']['args'].items()])
-    assert len(types) == 1, (
-        f"More than one type in node {node.name}, {types}, {node.meta['mase']['common']['args']}"
-    )
+    assert (
+        len(types) == 1
+    ), f"More than one type in node {node.name}, {types}, {node.meta['mase']['common']['args']}"
     node_type = types.pop()
-    assert node_type in get_args(supported_hw_quantisations), (
-        f"({node.name}) Unsupported hardware quantisation type: {node_type}"
-    )
+    assert node_type in get_args(
+        supported_hw_quantisations
+    ), f"({node.name}) Unsupported hardware quantisation type: {node_type}"
     return node_type
 
 

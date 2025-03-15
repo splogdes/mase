@@ -39,11 +39,11 @@ def integer_floor_quantizer_for_hw(x: Tensor, width: int, frac_width: int):
 
 def mxint_quantizer_for_hw(
     x: Tensor,
-    width: int, 
+    width: int,
     exponent_width: int,
     block_size: list[int],
     floor: bool = False,
-    ):
+):
     """
     - Convert IEEE FP32/64 to Microscaling Interger (MXINT), where an exponent is shared over all elements in a block.
     - https://arxiv.org/pdf/2310.10537.pdf
@@ -61,9 +61,10 @@ def mxint_quantizer_for_hw(
     """
 
     blocked_x, per_block_max, padded_x_shape, block_shape = block(
-        x, block_shape=block_size,
+        x,
+        block_shape=block_size,
     )
-    
+
     if torch.all(per_block_max == 0):
         per_block_max = torch.ones_like(per_block_max)
     else:
@@ -75,23 +76,22 @@ def mxint_quantizer_for_hw(
         per_block_max[per_block_max == 0] = per_block_max[per_block_max != 0].min()
 
     exponent_bias = 2 ** (exponent_width - 1) - 1
-    
+
     per_block_expontent = my_floor(torch.log2(per_block_max)) + exponent_bias
     per_block_expontent = my_clamp(per_block_expontent, 0, 2**exponent_width - 1)
-    
-    
+
     element_max = 2 ** (width - 1) - 1
     shift = 2 ** (width - 2)
-    
-    scaled_value = shift * blocked_x / 2**(per_block_expontent - exponent_bias)
-    
+
+    scaled_value = shift * blocked_x / 2 ** (per_block_expontent - exponent_bias)
+
     if floor:
         quantized_value = my_floor(scaled_value)
     else:
         quantized_value = my_round(scaled_value)
-    
+
     quantized_value = my_clamp(quantized_value, -element_max, element_max)
-    
+
     return quantized_value, per_block_expontent
 
 

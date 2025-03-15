@@ -9,9 +9,9 @@ import torch
 
 from chop.passes.graph.utils import vf, v2p, get_module_by_name, init_project
 from chop.nn.quantizers import (
-    integer_quantizer_for_hw, 
+    integer_quantizer_for_hw,
     integer_floor_quantizer_for_hw,
-    mxint_quantizer_for_hw
+    mxint_quantizer_for_hw,
 )
 
 logger = logging.getLogger(__name__)
@@ -243,7 +243,7 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
     Each element is represented in fixed-width hexadecimal format.
     """
     verilog_param_name = param_name.replace(".", "_")
-    
+
     mase = node.meta["mase"]
     common_args = mase.parameters["common"]["args"][verilog_param_name]
     hw_verilog = mase.parameters["hardware"]["verilog_param"]
@@ -251,8 +251,8 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
 
     total_size = math.prod(common_args["shape"])
     out_size = int(
-        hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"] *
-        hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
+        hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]
+        * hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
     )
     out_depth = (total_size + out_size - 1) // out_size
 
@@ -268,9 +268,8 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
         )
         param_data = torch.transpose(param_data, 0, 1)
 
-
     match common_args["type"]:
-        
+
         case "fixed":
             param_data = torch.flatten(param_data).tolist()
             width, frac_width = common_args["precision"]
@@ -285,17 +284,19 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                 line_values = []
                 start_idx = i * out_size
                 end_idx = start_idx + out_size
-                
+
                 for idx in range(end_idx - 1, start_idx - 1, -1):
                     if idx >= len(param_data):
                         value = 0
                     else:
                         value = param_data[idx]
 
-                    quantized = base_quantizer(torch.tensor(value), width, frac_width).item()
-                    hex_str = format(quantized, '0{}X'.format(width // 4))
+                    quantized = base_quantizer(
+                        torch.tensor(value), width, frac_width
+                    ).item()
+                    hex_str = format(quantized, "0{}X".format(width // 4))
                     line_values.append(hex_str)
-                    
+
                 data_buff += "".join(line_values) + "\n"
 
             dat_file = file_name + ".dat"
@@ -326,28 +327,30 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                 line_values = []
                 for j in range(mxint_blocks.shape[0]):
                     value = int(mxint_blocks[j, i].item())
-                    mask = 2**(data_width - 1) - 1
+                    mask = 2 ** (data_width - 1) - 1
                     value = (value & mask) - (value & ~mask)
-                    hex_str = format(value, '0{}X'.format(data_width // 4))
+                    hex_str = format(value, "0{}X".format(data_width // 4))
                     line_values.append(hex_str)
                 block_buff += " ".join(line_values[::-1]) + "\n"
 
             exp_buff = ""
             for exp in mxint_exp.flatten().tolist():
-                hex_str = format(int(exp), '0{}X'.format(exponent_width // 4))
+                hex_str = format(int(exp), "0{}X".format(exponent_width // 4))
                 exp_buff += hex_str + "\n"
 
             block_file = file_name + "_block.dat"
             exp_file = file_name + "_exp.dat"
-            
+
             with open(block_file, "w", encoding="utf-8") as outf:
                 outf.write(block_buff)
             with open(exp_file, "w", encoding="utf-8") as outf:
                 outf.write(exp_buff)
 
             assert os.path.isfile(block_file), "ROM data generation failed."
-            logger.debug(f"Init data {param_name} successfully written into {block_file}")
-            
+            logger.debug(
+                f"Init data {param_name} successfully written into {block_file}"
+            )
+
             assert os.path.isfile(exp_file), "ROM data generation failed."
             logger.debug(f"Init data {param_name} successfully written into {exp_file}")
 
@@ -439,9 +442,7 @@ def emit_bram_handshake(node, rtl_dir):
             verilog_name = os.path.join(
                 rtl_dir, f"{node_name}_{param_verilog_name}_source.sv"
             )
-            data_name = os.path.join(
-                rtl_dir, f"{node_name}_{param_verilog_name}_rom"
-            )
+            data_name = os.path.join(rtl_dir, f"{node_name}_{param_verilog_name}_rom")
             emit_parameters_in_mem_internal(node, param_name, verilog_name, data_name)
             emit_parameters_in_dat_internal(node, param_name, data_name)
         else:
@@ -464,9 +465,9 @@ def emit_parameters_in_mem_hls(node, param_name, file_name, data_name):
         node.meta["mase"].parameters["common"]["args"][param_name]["shape"]
     )
     out_size = iceil(total_size / out_depth)
-    assert total_size % out_depth == 0, (
-        f"Cannot partition imperfect size for now = {total_size} / {out_depth}."
-    )
+    assert (
+        total_size % out_depth == 0
+    ), f"Cannot partition imperfect size for now = {total_size} / {out_depth}."
     # Assume the first index is the total width
     out_width = node.meta["mase"].parameters["hardware"]["verilog_param"][
         "{}_WIDTH".format(param_name.upper())

@@ -147,10 +147,9 @@ INTERNAL_COMP: Dict[str, Dict[supported_hw_quantisations, IpDescType]] = {
                 "memory/rtl/unpacked_skid_buffer.sv",
                 "memory/rtl/skid_buffer.sv",
                 "memory/rtl/ultraram_fifo.sv",
-                "memory/rtl/ultraram.v"
-                
-            ]
-        }
+                "memory/rtl/ultraram.v",
+            ],
+        },
     },
     "relu": {
         "fixed": {
