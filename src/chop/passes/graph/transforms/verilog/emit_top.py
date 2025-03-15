@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, Dict
+from typing import Literal, Tuple, Dict
 import math
 import os
 import time
@@ -128,6 +128,33 @@ class VerilogInterfaceEmitter:
         Emit interface signal declarations for the top-level module
         """
 
+        def interface_template(
+            type: str | None,
+            var_name: str,
+            idx: int,
+            param_name: str,
+            parallelism_params: list[str],
+            node_name: str,
+            direction: Literal['input', 'output'],
+        ):
+            match type:
+                case "fixed":
+                    out = f"""
+    {direction}  [{param_name}_PRECISION_0-1:0] {var_name}_{idx} [{'*'.join(parallelism_params)}-1:0],"""
+                case "mxint":
+                    out = f"""
+    {direction}  [{param_name}_PRECISION_0-1:0] m_{var_name}_{idx} [{'*'.join(parallelism_params)}-1:0],
+    {direction}  [{param_name}_PRECISION_1-1:0] e_{var_name}_{idx},"""
+                case None:
+                    raise ValueError(f"Missing type information for {node_name} {param_name}")
+                case t:
+                    raise NotImplementedError(
+                        f"Unsupported type format {t} for {node_name} {param_name}"
+                    )
+            return out + f"""
+    {'input '  if direction == 'input' else 'output'} {var_name}_{idx}_valid,
+    {'output' if direction == 'input' else 'input '} {var_name}_{idx}_ready,"""
+
         nodes_in = self.graph.nodes_in
         nodes_out = self.graph.nodes_out
 
@@ -138,27 +165,32 @@ class VerilogInterfaceEmitter:
         i = 0
         for node in nodes_in:
             node_name = vf(node.name)
-            for arg_idx, arg in enumerate(
-                node.meta["mase"].parameters["common"]["args"].keys()
+            for arg_idx, (arg, info) in enumerate(
+                node.meta["mase"].parameters["common"]["args"].items()
             ):
                 if is_real_input_arg(node, arg_idx):
-                    # if "data_in" in arg:
                     arg_name = _cap(arg)
                     parallelism_params = [
                         param
                         for param in parameter_map
                         if param.startswith(f"{arg_name}_PARALLELISM_DIM")
                     ]
-                    interface += f"""
-    input  [{arg_name}_PRECISION_0-1:0] data_in_{i} [{'*'.join(parallelism_params)}-1:0],
-    input  data_in_{i}_valid,
-    output data_in_{i}_ready,"""
+
+                    interface += interface_template(
+                        info.get("type", None),
+                        var_name="data_in",
+                        idx=i,
+                        param_name=arg_name,
+                        parallelism_params=parallelism_params,
+                        node_name=node_name,
+                        direction='input'
+                    )
                     i += 1
 
         i = 0
         for node in nodes_out:
             node_name = vf(node.name)
-            for result in node.meta["mase"].parameters["common"]["results"].keys():
+            for (result, info) in node.meta["mase"].parameters["common"]["results"].items():
                 if "data_out" in result:
                     result_name = _cap(result)
                     parallelism_params = [
@@ -166,10 +198,15 @@ class VerilogInterfaceEmitter:
                         for param in parameter_map
                         if param.startswith(f"{result_name}_PARALLELISM_DIM")
                     ]
-                    interface += f"""
-    output  [{result_name}_PRECISION_0-1:0] data_out_{i} [{'*'.join(parallelism_params)}-1:0],
-    output  data_out_{i}_valid,
-    input data_out_{i}_ready,"""
+                    interface += interface_template(
+                        info.get("type", None),
+                        var_name="data_out",
+                        idx=i,
+                        param_name=result_name,
+                        parallelism_params=parallelism_params,
+                        node_name=node_name,
+                        direction='output'
+                    )
                     i += 1
 
         # TODO: emit off-chip parameter interface
@@ -770,6 +807,7 @@ def emit_verilog_top_transform_pass(graph, pass_args={}):
     init_project(project_dir)
     rtl_dir = os.path.join(project_dir, "hardware", "rtl")
     import shutil
+
     shutil.rmtree(rtl_dir)
     os.mkdir(rtl_dir)
 
