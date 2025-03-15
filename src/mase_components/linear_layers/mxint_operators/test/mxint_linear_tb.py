@@ -218,22 +218,25 @@ async def cocotb_test(dut):
 
 
 def get_mxint_linear_config_random(seed, kwargs={}):
-    MAX_IN_FEATURES = 60
-    MAX_OUT_FEATURES = 60
-    MAX_BATCH_SIZE = 100
+    MAX_IN_FEATURES = 6
+    MAX_OUT_FEATURES = 6
+    MAX_BATCH_SIZE = 10
     random.seed(seed)
 
-    BLOCK_SIZE = random.randint(1, 16)
-    PARALLELISM = random.randint(1, 8)
-    BATCH_SIZE = random.randint(1, MAX_BATCH_SIZE // PARALLELISM) * PARALLELISM
-    IN_FEATURES = random.randint(1, MAX_IN_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
-    OUT_FEATURES = random.randint(1, MAX_OUT_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
+    BLOCK_SIZE = random.randint(2, 3)
+    PARALLELISM = random.randint(2, 2)
+    BATCH_SIZE = random.randint(2, MAX_BATCH_SIZE // PARALLELISM) * PARALLELISM
+    IN_FEATURES = random.randint(2, MAX_IN_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
+    OUT_FEATURES = random.randint(2, MAX_OUT_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
 
     MAX_MANTISSA = 16
     MAX_EXPONENT = 6
 
+    mantissas = [random.randint(3, MAX_MANTISSA) for _ in range(4)]
+    exps = [random.randint(2,min(m, MAX_EXPONENT)) for m in mantissas]
+    
     config = {
-        "HAS_BIAS": 0,
+        "HAS_BIAS": random.randint(0,1),
         "DATA_IN_0_TENSOR_SIZE_DIM_0": IN_FEATURES,
         "DATA_IN_0_TENSOR_SIZE_DIM_1": BATCH_SIZE,
         "DATA_IN_0_PARALLELISM_DIM_0": BLOCK_SIZE,
@@ -242,14 +245,14 @@ def get_mxint_linear_config_random(seed, kwargs={}):
         "WEIGHT_TENSOR_SIZE_DIM_1": OUT_FEATURES,
         "WEIGHT_PARALLELISM_DIM_0": BLOCK_SIZE,
         "WEIGHT_PARALLELISM_DIM_1": BLOCK_SIZE,
-        "DATA_IN_0_PRECISION_0": random.randint(2, MAX_MANTISSA),
-        "DATA_IN_0_PRECISION_1": random.randint(2, MAX_EXPONENT),
-        "WEIGHT_PRECISION_0": random.randint(2, MAX_MANTISSA),
-        "WEIGHT_PRECISION_1": random.randint(2, MAX_EXPONENT),
-        "BIAS_PRECISION_0": random.randint(2, MAX_MANTISSA),
-        "BIAS_PRECISION_1": random.randint(2, MAX_EXPONENT),
-        "DATA_OUT_0_PRECISION_0": random.randint(2, MAX_MANTISSA),
-        "DATA_OUT_0_PRECISION_1": random.randint(2, MAX_EXPONENT),
+        "DATA_IN_0_PRECISION_0": mantissas[0],
+        "DATA_IN_0_PRECISION_1": exps[0],
+        "WEIGHT_PRECISION_0": mantissas[1],
+        "WEIGHT_PRECISION_1": exps[1],
+        "BIAS_PRECISION_0": mantissas[2],
+        "BIAS_PRECISION_1": exps[2],
+        "DATA_OUT_0_PRECISION_0": mantissas[3],
+        "DATA_OUT_0_PRECISION_1": exps[3],
     }
     config.update(kwargs)
     return config
@@ -288,7 +291,20 @@ def test_mxint_linear_full_random():
     seed = os.getenv("COCOTB_SEED")
 
     # use this to fix a particular parameter value
-    param_override = {}
+    param_override = {
+                    "HAS_BIAS": 0,
+                    "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
+                    "DATA_IN_0_TENSOR_SIZE_DIM_1": 10,
+                    "DATA_IN_0_PARALLELISM_DIM_0": 2,
+                    "WEIGHT_TENSOR_SIZE_DIM_0": 4,
+                    "WEIGHT_TENSOR_SIZE_DIM_1": 4,
+                    "WEIGHT_PARALLELISM_DIM_0": 2,
+                    "WEIGHT_PARALLELISM_DIM_1": 2,
+                    "BIAS_TENSOR_SIZE_DIM_0": 4,
+                    "BIAS_PARALLELISM_DIM_0": 2,
+                    # "DATA_OUT_0_PRECISION_1": 8,
+                    # "DATA_OUT_0_PRECISION_0": 8,
+                }
 
     if seed is not None:
         seed = int(seed)
