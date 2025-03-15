@@ -207,12 +207,14 @@ class LinearTB(Testbench):
 
 @cocotb.test()
 async def cocotb_test(dut):
+    probs = [torch.rand(1).item() for _ in range(4)]
+    # probs = [1 for _ in range(4)]
     tb = LinearTB(
         dut,
-        data_in_p=torch.rand(1).item(),
-        weight_p=torch.rand(1).item(),
-        bias_p=torch.rand(1).item(),
-        data_out_p=torch.rand(1).item(),
+        data_in_p=probs[0],
+        weight_p=probs[1],
+        bias_p=probs[2],
+        data_out_p=probs[3],
     )
     await tb.run_test(us=200)
 
