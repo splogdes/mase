@@ -236,6 +236,8 @@ def get_mxint_linear_config_random(seed, kwargs={}):
 
     mantissas = [random.randint(3, MAX_MANTISSA) for _ in range(4)]
     exps = [random.randint(2,min(m, MAX_EXPONENT)) for m in mantissas]
+    mantissas[3] = max(mantissas[0], mantissas[1], mantissas[2]) + 1
+    exps[3] = max(exps[0], exps[1], exps[2]) + 1
     
     config = {
         "HAS_BIAS": random.randint(0,1),
@@ -262,7 +264,7 @@ def get_mxint_linear_config_random(seed, kwargs={}):
 
 def get_mxint_linear_config(kwargs={}):
     config = {
-        "HAS_BIAS": 0,
+        "HAS_BIAS": 1,
         "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
         "DATA_IN_0_TENSOR_SIZE_DIM_1": 2,
         "DATA_IN_0_PARALLELISM_DIM_0": 2,
@@ -294,7 +296,7 @@ def test_mxint_linear_full_random():
 
     # use this to fix a particular parameter value
     param_override = {
-                    "HAS_BIAS": 0,
+                    "HAS_BIAS": 1,
                     "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
                     "DATA_IN_0_TENSOR_SIZE_DIM_1": 10,
                     "DATA_IN_0_PARALLELISM_DIM_0": 2,
@@ -335,7 +337,7 @@ def test_mxint_linear():
         module_param_list=[
             get_mxint_linear_config(
                 {
-                    "HAS_BIAS": 0,
+                    "HAS_BIAS": 1,
                     "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
                     "DATA_IN_0_TENSOR_SIZE_DIM_1": 10,
                     "DATA_IN_0_PARALLELISM_DIM_0": 2,
