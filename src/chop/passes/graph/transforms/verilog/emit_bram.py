@@ -8,7 +8,11 @@ from chop.passes.graph.transforms.verilog.mxint_bram_template import mxint_templ
 import torch
 
 from chop.passes.graph.utils import vf, v2p, get_module_by_name, init_project
-from chop.nn.quantizers import integer_quantizer_for_hw, integer_floor_quantizer_for_hw
+from chop.nn.quantizers import (
+    integer_quantizer_for_hw, 
+    integer_floor_quantizer_for_hw,
+    mxint_quantizer_for_hw
+)
 
 logger = logging.getLogger(__name__)
 from pathlib import Path
@@ -253,7 +257,6 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
     )
     out_depth = int((total_size + out_size - 1) / out_size)
 
-    data_buff = ""
     param_data = node.meta["mase"].module.get_parameter(param_name).data
     if node.meta["mase"].parameters["hardware"]["interface"][verilog_param_name][
         "transpose"
@@ -273,53 +276,115 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
             ),
         )
         param_data = torch.transpose(param_data, 0, 1)
-    param_data = torch.flatten(param_data).tolist()
 
-    if (
-        node.meta["mase"].parameters["common"]["args"][verilog_param_name]["type"]
-        == "fixed"
-    ):
-        width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
-            "precision"
-        ][0]
-        frac_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
-            "precision"
-        ][1]
+    match node.meta["mase"].parameters["common"]["args"][verilog_param_name]["type"]:
+        
+        case "fixed":    
+            
+            param_data = torch.flatten(param_data).tolist()
+            
+            width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][0]
+            frac_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][1]
 
-        if node.meta["mase"].module.config.get("floor", False):
-            base_quantizer = integer_floor_quantizer_for_hw
-        else:
-            base_quantizer = integer_quantizer_for_hw
+            if node.meta["mase"].module.config.get("floor", False):
+                base_quantizer = integer_floor_quantizer_for_hw
+            else:
+                base_quantizer = integer_quantizer_for_hw
 
-        scale = 2**frac_width
-        thresh = 2**width
-        for i in range(0, out_depth):
-            line_buff = ""
-            for j in range(0, out_size):
-                if i * out_size + out_size - 1 - j >= len(param_data):
-                    value = 0
-                else:
-                    value = param_data[i * out_size + out_size - 1 - j]
+            scale = 2**frac_width
+            thresh = 2**width
+            
+            data_buff = ""
+            for i in range(0, out_depth):
+                line_buff = ""
+                for j in range(0, out_size):
+                    if i * out_size + out_size - 1 - j >= len(param_data):
+                        value = 0
+                    else:
+                        value = param_data[i * out_size + out_size - 1 - j]
 
-                # TODO: please clear this up later
-                value = base_quantizer(torch.tensor(value), width, frac_width).item()
-                value = str(bin(value))
-                value_bits = value[value.find("0b") + 2 :]
-                value_bits = "0" * (width - len(value_bits)) + value_bits
-                assert len(value_bits) == width
-                value_bits = hex(int(value_bits, 2))
-                value_bits = value_bits[value_bits.find("0x") + 2 :]
-                value_bits = "0" * (width // 4 - len(value_bits)) + value_bits
-                line_buff = value_bits + line_buff
+                    # TODO: please clear this up later
+                    value = base_quantizer(torch.tensor(value), width, frac_width).item()
+                    value = str(bin(value))
+                    value_bits = value[value.find("0b") + 2 :]
+                    value_bits = "0" * (width - len(value_bits)) + value_bits
+                    assert len(value_bits) == width
+                    value_bits = hex(int(value_bits, 2))
+                    value_bits = value_bits[value_bits.find("0x") + 2 :]
+                    value_bits = "0" * (width // 4 - len(value_bits)) + value_bits
+                    line_buff = value_bits + line_buff
 
-            data_buff += line_buff + "\n"
-    else:
-        assert False, "Emitting non-fixed parameters is not supported."
+                data_buff += line_buff + "\n"
+                
+            with open(file_name + ".dat", "w", encoding="utf-8") as outf:
+                outf.write(data_buff)
+                
+            logger.debug(f"Init data {param_name} successfully written into {file_name + '.dat'}")
+            assert os.path.isfile(file_name + ".dat"), "ROM data generation failed."
+        
+        case "mxint":
+            data_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][0]
+            exponent_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][1]
+            
+            floor_values = node.meta["mase"].module.config.get("floor", False)
+            
+            block_size = [
+                node.meta["mase"].parameters["hardware"]["verilog_param"][
+                    f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"
+                ],
+                node.meta["mase"].parameters["hardware"]["verilog_param"][
+                    f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"
+                ],
+            ]
 
-    with open(file_name, "w", encoding="utf-8") as outf:
-        outf.write(data_buff)
-    logger.debug(f"Init data {param_name} successfully written into {file_name}")
-    assert os.path.isfile(file_name), "ROM data generation failed."
+            mxint_blocks, mxint_exp = mxint_quantizer_for_hw(
+                param_data,
+                data_width,
+                exponent_width,
+                block_size,
+                floor=floor_values,
+            )
+            
+            block_buff = ""
+            for i in range(mxint_blocks.shape[1]):
+                line_buff = ""
+                for j in range(mxint_blocks.shape[0]):
+                    value = int(mxint_blocks[j, i].item())
+                    mask = 2**(data_width - 1) - 1
+                    value = (value & mask) - (value & ~mask)
+                    hex_str = hex(value)[2:].upper()
+                    hex_str = hex_str.zfill(data_width // 4)
+                    line_buff = hex_str + " " + line_buff
+                block_buff += line_buff + "\n"
+                
+            exp_buff = ""
+            for exp in mxint_exp.flatten().tolist():
+                value = int(exp)
+                hex_str = hex(value)[2:].upper()
+                hex_str = hex_str.zfill(exponent_width // 4)
+                exp_buff += hex_str + "\n"
+            
+            with open(file_name + "_block.dat", "w", encoding="utf-8") as outf:
+                outf.write(block_buff)
+                
+            with open(file_name + "_exp.dat", "w", encoding="utf-8") as outf:
+                outf.write(exp_buff)
+                
+            assert os.path.isfile(file_name + "_block.dat"), "ROM data generation failed."
+            logger.debug(f"Init data {param_name} successfully written into {file_name + '_block.dat'}")
+            assert os.path.isfile(file_name + "_exp.dat"), "ROM data generation failed."
+            logger.debug(f"Init data {param_name} successfully written into {file_name + '_exp.dat'}")
+            
+        case _:
+            assert False, "Emitting non-fixed parameters is not supported."
 
 
 def emit_parameters_in_dat_hls(node, param_name, file_name):
@@ -407,7 +472,7 @@ def emit_bram_handshake(node, rtl_dir):
                 rtl_dir, f"{node_name}_{param_verilog_name}_source.sv"
             )
             data_name = os.path.join(
-                rtl_dir, f"{node_name}_{param_verilog_name}_rom.dat"
+                rtl_dir, f"{node_name}_{param_verilog_name}_rom"
             )
             emit_parameters_in_mem_internal(node, param_name, verilog_name, data_name)
             emit_parameters_in_dat_internal(node, param_name, data_name)
