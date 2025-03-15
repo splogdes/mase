@@ -13,7 +13,7 @@ module mxint_accumulator #(
     parameter DATA_OUT_0_PRECISION_0 = DATA_IN_0_PRECISION_0 + 2 ** DATA_IN_0_PRECISION_1 + $clog2(
         IN_DEPTH
     ),
-    parameter DATA_OUT_0_PRECISION_1 = DATA_IN_0_PRECISION_1
+    parameter DATA_OUT_0_PRECISION_1 = DATA_IN_0_PRECISION_1 + $clog2($clog2(IN_DEPTH)+1)
 ) (
     input logic clk,
     input logic rst,
@@ -54,7 +54,7 @@ module mxint_accumulator #(
   logic        [ DATA_IN_0_PRECISION_1 - 1:0] max_exponent_q;
 
   logic        [             COUNTER_WIDTH:0] accum_count;
-  logic signed [ DATA_IN_0_PRECISION_1 - 1:0] shift;
+  logic signed [ DATA_OUT_0_PRECISION_1 - 1:0] shift;
   logic                                       no_reg_value;
 
 
@@ -141,7 +141,7 @@ module mxint_accumulator #(
       if (data_out_0_ready) begin
 
         if (data_in_0_valid) begin
-          edata_out_0 <= edata_in_0;
+          edata_out_0 <= edata_in_0 - EXP_IN_BIAS + EXP_OUT_BIAS + LEFT_PADDING;
           max_exponent_q <= edata_in_0;
         end else begin
           edata_out_0 <= '0;
