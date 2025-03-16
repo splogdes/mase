@@ -83,6 +83,37 @@ def is_real_input_arg(node, arg_idx):
     )
 
 
+def interface_template(
+    type: str | None,
+    var_name: str,
+    param_name: str,
+    parallelism_params: list[str],
+    node_name: str,
+    direction: Literal["input", "output", "logic"],
+):
+    suffix = ';' if direction == 'logic' else ','
+    match type:
+        case "fixed":
+            out = f"""
+    {direction} [{param_name}_PRECISION_0-1:0] {var_name} [{'*'.join(parallelism_params)}-1:0]{suffix}"""
+        case "mxint":
+            out = f"""
+    {direction} [{param_name}_PRECISION_0-1:0] m_{var_name} [{'*'.join(parallelism_params)}-1:0]{suffix}
+    {direction} [{param_name}_PRECISION_1-1:0] e_{var_name}{suffix}"""
+        case None:
+            raise ValueError(f"Missing type information for {node_name} {param_name}, {var_name}")
+        case t:
+            raise NotImplementedError(
+                f"Unsupported type format {t} for {node_name} {param_name}, {var_name}"
+            )
+    return (
+        out
+        + f"""
+    {'logic' if direction == 'logic' else 'input ' if direction == 'input' else 'output'} {var_name}_valid{suffix}
+    {'logic' if direction == 'logic' else 'output' if direction == 'input' else 'input '} {var_name}_ready{suffix}"""
+    )
+
+
 # =============================================================================
 # Verilog parameters
 # =============================================================================
@@ -128,33 +159,6 @@ class VerilogInterfaceEmitter:
         Emit interface signal declarations for the top-level module
         """
 
-        def interface_template(
-            type: str | None,
-            var_name: str,
-            idx: int,
-            param_name: str,
-            parallelism_params: list[str],
-            node_name: str,
-            direction: Literal['input', 'output'],
-        ):
-            match type:
-                case "fixed":
-                    out = f"""
-    {direction}  [{param_name}_PRECISION_0-1:0] {var_name}_{idx} [{'*'.join(parallelism_params)}-1:0],"""
-                case "mxint":
-                    out = f"""
-    {direction}  [{param_name}_PRECISION_0-1:0] m_{var_name}_{idx} [{'*'.join(parallelism_params)}-1:0],
-    {direction}  [{param_name}_PRECISION_1-1:0] e_{var_name}_{idx},"""
-                case None:
-                    raise ValueError(f"Missing type information for {node_name} {param_name}")
-                case t:
-                    raise NotImplementedError(
-                        f"Unsupported type format {t} for {node_name} {param_name}"
-                    )
-            return out + f"""
-    {'input '  if direction == 'input' else 'output'} {var_name}_{idx}_valid,
-    {'output' if direction == 'input' else 'input '} {var_name}_{idx}_ready,"""
-
         nodes_in = self.graph.nodes_in
         nodes_out = self.graph.nodes_out
 
@@ -178,19 +182,20 @@ class VerilogInterfaceEmitter:
 
                     interface += interface_template(
                         info.get("type", None),
-                        var_name="data_in",
-                        idx=i,
+                        var_name=f"data_in_{i}",
                         param_name=arg_name,
                         parallelism_params=parallelism_params,
                         node_name=node_name,
-                        direction='input'
+                        direction="input",
                     )
                     i += 1
 
         i = 0
         for node in nodes_out:
             node_name = vf(node.name)
-            for (result, info) in node.meta["mase"].parameters["common"]["results"].items():
+            for result, info in (
+                node.meta["mase"].parameters["common"]["results"].items()
+            ):
                 if "data_out" in result:
                     result_name = _cap(result)
                     parallelism_params = [
@@ -200,12 +205,11 @@ class VerilogInterfaceEmitter:
                     ]
                     interface += interface_template(
                         info.get("type", None),
-                        var_name="data_out",
-                        idx=i,
+                        var_name=f"data_out_{i}",
                         param_name=result_name,
                         parallelism_params=parallelism_params,
                         node_name=node_name,
-                        direction='output'
+                        direction="output",
                     )
                     i += 1
 
@@ -249,10 +253,14 @@ class VerilogSignalEmitter:
                 if node.meta["mase"]["common"]["mase_op"] == "getitem":
                     arg = "data_in_0"
 
-                signals += f"""
-logic [{node_name}_{arg_name}_PRECISION_0-1:0]  {node_name}_{arg}        [{'*'.join(parallelism_params)}-1:0];
-logic                             {node_name}_{arg}_valid;
-logic                             {node_name}_{arg}_ready;"""
+                signals += interface_template(
+                        arg_info.get("type", None),
+                        var_name=f"{node_name}_{arg}",
+                        param_name=f"{node_name}_{arg_name}",
+                        parallelism_params=parallelism_params,
+                        node_name=node_name,
+                        direction="logic",
+                    )
 
         # Output signals
         for result, result_info in (
@@ -275,10 +283,15 @@ logic                             {node_name}_{arg}_ready;"""
                     for param in parameter_map
                     if f"{node_name}_{result_name}_PARALLELISM_DIM" in param
                 ]
-                signals += f"""
-logic [{node_name}_{result_name}_PRECISION_0-1:0]  {node_name}_{result}        [{'*'.join(parallelism_params)}-1:0];
-logic                             {node_name}_{result}_valid;
-logic                             {node_name}_{result}_ready;"""
+                
+                signals += interface_template(
+                    result_info.get("type", None),
+                    var_name=f"{node_name}_{result}",
+                    param_name=f"{node_name}_{result_name}",
+                    parallelism_params=parallelism_params,
+                    node_name=node_name,
+                    direction="logic",
+                )
 
         return signals
 
