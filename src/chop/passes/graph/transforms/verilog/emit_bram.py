@@ -4,7 +4,9 @@ import os
 import struct
 import time
 
+from chop.nn.quantizers.utils import block
 from chop.passes.graph.transforms.verilog.mxint_bram_template import mxint_template
+from mase_components.linear_layers.mxint_operators.test.utils import pack_tensor_to_mx_listed_chunk
 import torch
 
 from chop.passes.graph.utils import vf, v2p, get_module_by_name, init_project
@@ -54,13 +56,20 @@ def emit_parameters_in_mem_internal_mxint(
     node_type_info = node.meta["mase"].parameters["common"]["args"][verilog_param_name]
     node_verilog_info = node.meta["mase"].parameters["hardware"]["verilog_param"]
 
-    total_size = math.prod(node_type_info["shape"])
-
     block_size = int(node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"])
     # how many blocks are processed in parallel
     parallelism = int(
         node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
     )
+    
+    _, _, shape, _ = block(
+        torch.ones(node_type_info["shape"]),
+        block_shape=[parallelism,block_size],
+    )
+    print(shape)
+    
+    total_size = math.prod(node_type_info["shape"])
+
 
     out_size = block_size * parallelism
     out_depth = int(total_size / out_size)
@@ -73,8 +82,8 @@ def emit_parameters_in_mem_internal_mxint(
     rom_str = mxint_template.format(
         node_param_name=node_param_name,
         date_time=time.strftime("%d/%m/%Y %H:%M:%S"),
-        e_width=exponent_width * parallelism,
-        e_mem_size=out_depth,
+        e_width=exponent_width * block_size * parallelism,
+        e_mem_size=block_size,
         m_width=mantissa_width * out_size,
         m_mem_size=out_depth,
         filename=data_name,
@@ -333,22 +342,29 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                 block_size,
                 floor=floor_values,
             )
+            
+            data_list = pack_tensor_to_mx_listed_chunk(mxint_blocks, mxint_exp, block_size)
 
             block_buff = ""
-            for i in range(mxint_blocks.shape[1]):
+            exp_buff = ""
+            for (ms, e) in data_list:
                 line_values = []
-                for j in range(mxint_blocks.shape[0]):
-                    value = int(mxint_blocks[j, i].item())
+                for m in ms:
+                    value = int(m)
                     mask = 2 ** (data_width - 1) - 1
                     value = (value & mask) - (value & ~mask)
                     hex_str = format(value, "0{}X".format(data_width // 4))
                     line_values.append(hex_str)
-                block_buff += " ".join(line_values[::-1]) + "\n"
+                block_buff += "".join(line_values[::-1]) + "\n"
 
-            exp_buff = ""
-            for exp in mxint_exp.flatten().tolist():
-                hex_str = format(int(exp), "0{}X".format(exponent_width // 4))
+                hex_str = format(int(e), "0{}X".format(exponent_width // 4))
                 exp_buff += hex_str + "\n"
+                
+            # block_buff = ""
+            # for i in range(mxint_blocks.shape[1]):
+
+            # exp_buff = ""
+            # for exp in mxint_exp.flatten().tolist():
 
             block_file = file_name + "_block.dat"
             exp_file = file_name + "_exp.dat"
