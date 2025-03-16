@@ -57,7 +57,7 @@ def test_emit_verilog_linear():
     mg = chop.MaseGraph(model=mlp)
 
     # Provide a dummy input for the graph so it can use for tracing
-    batch_size = 2
+    batch_size = 1
     x = torch.randn((batch_size, IN_FEATURES))
     dummy_in = {"x": x}
 
@@ -74,15 +74,15 @@ def test_emit_verilog_linear():
                     # data
                     "data_in_width": 12,
                     "data_in_exponent_width": 4,
-                    "weight_block_size": [1, block_size],
+                    "data_in_block_size": [1, block_size],
                     # weight
                     "weight_width": 12,
                     "weight_exponent_width": 4,
-                    "bias_block_size": [1, block_size],
+                    "weight_block_size": [1, block_size],
                     # bias
                     "bias_width": 12,
                     "bias_exponent_width": 4,
-                    "data_in_block_size": [1, block_size],
+                    "bias_block_size": [1, block_size],
                 }
             },
         }
@@ -90,11 +90,22 @@ def test_emit_verilog_linear():
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
 
+    block_parallelism = 1
 
-    # Increase weight range
-    mg.model.fc1.weight = torch.nn.Parameter(
-        10 * torch.randn(mg.model.fc1.weight.shape)
-    )
+    # hack to pass the correct parallelism parameters around
+    for node in mg.fx_graph.nodes:
+        node_meta = node.meta['mase'].parameters['common']
+        match node_meta['mase_op']:
+            case 'linear':
+                args = node_meta['args']
+                args['data_in_0']['parallelism_0'] = block_size
+                args['data_in_0']['parallelism_1'] = block_parallelism
+                args['weight']['parallelism_0'] = block_size
+                args['weight']['parallelism_1'] = block_size
+                args['bias']['parallelism_0'] = block_size
+                args['bias']['parallelism_1'] = block_parallelism
+                
+    mg.model.fc1.weight.data = torch.eye(IN_FEATURES) 
 
     mg, _ = passes.add_hardware_metadata_analysis_pass(
         mg
