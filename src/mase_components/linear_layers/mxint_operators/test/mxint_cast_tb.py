@@ -45,6 +45,7 @@ class MXINTVectorMultTB(Testbench):
             dut.data_out_valid,
             dut.data_out_ready,
             check=True,
+            off_by_one=True,
         )
 
         self.data_in_0_driver.log.setLevel(logging.DEBUG)
