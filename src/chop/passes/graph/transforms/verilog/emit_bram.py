@@ -82,8 +82,8 @@ def emit_parameters_in_mem_internal_mxint(
     rom_str = mxint_template.format(
         node_param_name=node_param_name,
         date_time=time.strftime("%d/%m/%Y %H:%M:%S"),
-        e_width=exponent_width * block_size * parallelism,
-        e_mem_size=block_size,
+        e_width=exponent_width,
+        e_mem_size=out_depth,
         m_width=mantissa_width * out_size,
         m_mem_size=out_depth,
         filename=data_name,
