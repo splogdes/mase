@@ -235,12 +235,12 @@ def get_mxint_linear_config_random(seed, kwargs={}):
     MAX_EXPONENT = 6
 
     mantissas = [random.randint(3, MAX_MANTISSA) for _ in range(4)]
-    exps = [random.randint(2,min(m, MAX_EXPONENT)) for m in mantissas]
+    exps = [random.randint(2, min(m, MAX_EXPONENT)) for m in mantissas]
     mantissas[3] = max(mantissas[0], mantissas[1], mantissas[2]) + 1
     exps[3] = max(exps[0], exps[1], exps[2]) + 1
-    
+
     config = {
-        "HAS_BIAS": random.randint(0,1),
+        "HAS_BIAS": random.randint(0, 1),
         "DATA_IN_0_TENSOR_SIZE_DIM_0": IN_FEATURES,
         "DATA_IN_0_TENSOR_SIZE_DIM_1": BATCH_SIZE,
         "DATA_IN_0_PARALLELISM_DIM_0": BLOCK_SIZE,
@@ -296,19 +296,19 @@ def test_mxint_linear_full_random():
 
     # use this to fix a particular parameter value
     param_override = {
-                    "HAS_BIAS": 1,
-                    "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
-                    "DATA_IN_0_TENSOR_SIZE_DIM_1": 10,
-                    "DATA_IN_0_PARALLELISM_DIM_0": 2,
-                    "WEIGHT_TENSOR_SIZE_DIM_0": 4,
-                    "WEIGHT_TENSOR_SIZE_DIM_1": 4,
-                    "WEIGHT_PARALLELISM_DIM_0": 2,
-                    "WEIGHT_PARALLELISM_DIM_1": 2,
-                    "BIAS_TENSOR_SIZE_DIM_0": 4,
-                    "BIAS_PARALLELISM_DIM_0": 2,
-                    # "DATA_OUT_0_PRECISION_1": 8,
-                    # "DATA_OUT_0_PRECISION_0": 8,
-                }
+        "HAS_BIAS": 1,
+        "DATA_IN_0_TENSOR_SIZE_DIM_0": 4,
+        "DATA_IN_0_TENSOR_SIZE_DIM_1": 10,
+        "DATA_IN_0_PARALLELISM_DIM_0": 2,
+        "WEIGHT_TENSOR_SIZE_DIM_0": 4,
+        "WEIGHT_TENSOR_SIZE_DIM_1": 4,
+        "WEIGHT_PARALLELISM_DIM_0": 2,
+        "WEIGHT_PARALLELISM_DIM_1": 2,
+        "BIAS_TENSOR_SIZE_DIM_0": 4,
+        "BIAS_PARALLELISM_DIM_0": 2,
+        # "DATA_OUT_0_PRECISION_1": 8,
+        # "DATA_OUT_0_PRECISION_0": 8,
+    }
 
     if seed is not None:
         seed = int(seed)
