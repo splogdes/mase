@@ -35,7 +35,7 @@ module mxint_cast #(
   // =============================
 
   logic data_for_max_valid, data_for_max_ready, data_for_out_valid, data_for_out_ready;
-  logic [IN_MAN_WIDTH-1:0] mbuffer_data_for_out [BLOCK_SIZE-1:0];
+  logic signed [IN_MAN_WIDTH-1:0] mbuffer_data_for_out[BLOCK_SIZE-1:0];
   logic [IN_EXP_WIDTH-1:0] ebuffer_data_for_out;
   logic buffer_data_for_out_valid, buffer_data_for_out_ready;
 
@@ -49,6 +49,8 @@ module mxint_cast #(
   localparam FIFO_DEPTH = $clog2(BLOCK_SIZE);
   logic [LOSSLESSS_EDATA_WIDTH - 1:0] edata_out_full;
 
+  localparam MAX_DATA_OUT = 2 ** (OUT_MAN_WIDTH - 1) - 1;
+  localparam MIN_DATA_OUT = -MAX_DATA_OUT;
 
   // =============================
   // Handshake Signals
@@ -159,17 +161,19 @@ module mxint_cast #(
 
     always_comb begin
 
-      if (shift_value >= 0 && data_out_valid) begin
+      if (shift_value >= OUT_MAN_WIDTH - 1)
+        if (mbuffer_data_for_out[i] >= 0) mdata_out[i] = 0;
+        else mdata_out[i] = -1;
 
-        if (mdata_in[i] >= (1 << (OUT_MAN_WIDTH - shift_value)))
-          mdata_out[i] = {1'b0, {(OUT_MAN_WIDTH - 2) {1'b1}}};
+      else if (mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+        mdata_out[i] = MAX_DATA_OUT;
 
-        else if (-mdata_in[i] >= (1 << (OUT_MAN_WIDTH - shift_value)))
-          mdata_out[i] = {1'b1, {(OUT_MAN_WIDTH - 3) {1'b0}}, 1'b1};
+      else if (-mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+        mdata_out[i] = MIN_DATA_OUT;
 
-        else mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
+      else if (shift_value >= 0) mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
 
-      end else mdata_out[i] = mbuffer_data_for_out[i] >>> -shift_value;
+      else mdata_out[i] = mbuffer_data_for_out[i] >>> -shift_value;
 
     end
 
