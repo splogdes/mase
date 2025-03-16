@@ -72,8 +72,8 @@ module {node_param_name}_source #(
     input clk,
     input rst,
 
-    output logic [{verilog_param_name}_PRECISION_0-1:0] mantissa_out      [{verilog_param_name}_PARALLELISM_DIM_0 * {verilog_param_name}_PARALLELISM_DIM_1-1:0],
-    output logic [{verilog_param_name}_PRECISION_1-1:0] exponent_out,
+    output logic [{verilog_param_name}_PRECISION_0-1:0] mdata_out      [{verilog_param_name}_PARALLELISM_DIM_0 * {verilog_param_name}_PARALLELISM_DIM_1-1:0],
+    output logic [{verilog_param_name}_PRECISION_1-1:0] edata_out,
     output                                              data_out_valid,
     input                                               data_out_ready
 );
