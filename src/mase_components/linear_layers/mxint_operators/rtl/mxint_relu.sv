@@ -37,40 +37,38 @@ module mxint_relu #(
     input logic data_out_0_ready
 
 );
-    logic [DATA_IN_0_PRECISION_0-1:0] mdata_out_0_i [DATA_IN_0_PARALLELISM_DIM_0*DATA_IN_0_PARALLELISM_DIM_1-1:0];
-    logic [DATA_IN_0_PRECISION_1-1:0] edata_out_0_i;
-    logic data_out_0_valid_i;
-    logic data_out_0_ready_i;
+  logic [DATA_IN_0_PRECISION_0-1:0] mdata_out_0_i [DATA_IN_0_PARALLELISM_DIM_0*DATA_IN_0_PARALLELISM_DIM_1-1:0];
+  logic [DATA_IN_0_PRECISION_1-1:0] edata_out_0_i;
+  logic data_out_0_valid_i;
+  logic data_out_0_ready_i;
 
-    always_comb
-    begin
-        edata_out_0_i         = edata_in_0;
+  always_comb begin
+    edata_out_0_i = edata_in_0;
 
-        for (int i = 0; i < DATA_IN_0_PARALLELISM_DIM_0 * DATA_IN_0_PARALLELISM_DIM_1; i++)
-        begin
-            mdata_out_0_i[i]  = mdata_in_0[i][DATA_IN_0_PRECISION_0-1] ? '0 : mdata_in_0[i];
-        end
-        data_out_0_valid_i    = data_in_0_valid;
+    for (int i = 0; i < DATA_IN_0_PARALLELISM_DIM_0 * DATA_IN_0_PARALLELISM_DIM_1; i++) begin
+      mdata_out_0_i[i] = mdata_in_0[i][DATA_IN_0_PRECISION_0-1] ? '0 : mdata_in_0[i];
     end
+    data_out_0_valid_i = data_in_0_valid;
+  end
 
-    mxint_cast #(
-      .IN_MAN_WIDTH     (DATA_IN_0_PRECISION_0),
-      .IN_EXP_WIDTH     (DATA_IN_0_PRECISION_1),
-      .OUT_MAN_WIDTH    (DATA_IN_0_PRECISION_0),
-      .OUT_EXP_WIDTH    (DATA_IN_0_PRECISION_1),
-      .BLOCK_SIZE       (DATA_IN_0_PARALLELISM_DIM_1 * DATA_IN_0_PARALLELISM_DIM_0)
-    ) cast_i            (
-        .clk            (clk),
-        .rst            (rst),
-        .mdata_in       (mdata_out_0_i),
-        .edata_in       (edata_out_0_i),
-        .data_in_valid  (data_out_0_valid_i),
-        .data_in_ready  (data_in_0_ready),
-        .mdata_out      (mdata_out_0),
-        .edata_out      (edata_out_0),
-        .data_out_valid (data_out_0_valid),
-        .data_out_ready (data_out_0_ready)
-    );
+  mxint_cast #(
+      .IN_MAN_WIDTH (DATA_IN_0_PRECISION_0),
+      .IN_EXP_WIDTH (DATA_IN_0_PRECISION_1),
+      .OUT_MAN_WIDTH(DATA_IN_0_PRECISION_0),
+      .OUT_EXP_WIDTH(DATA_IN_0_PRECISION_1),
+      .BLOCK_SIZE   (DATA_IN_0_PARALLELISM_DIM_1 * DATA_IN_0_PARALLELISM_DIM_0)
+  ) cast_i (
+      .clk           (clk),
+      .rst           (rst),
+      .mdata_in      (mdata_out_0_i),
+      .edata_in      (edata_out_0_i),
+      .data_in_valid (data_out_0_valid_i),
+      .data_in_ready (data_in_0_ready),
+      .mdata_out     (mdata_out_0),
+      .edata_out     (edata_out_0),
+      .data_out_valid(data_out_0_valid),
+      .data_out_ready(data_out_0_ready)
+  );
 
 endmodule
 

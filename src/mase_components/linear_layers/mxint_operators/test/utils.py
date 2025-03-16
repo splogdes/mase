@@ -8,20 +8,17 @@ from torch import Tensor
 
 def mxint_quantize(x, width: int = 12, exponent_width: int = 6, exponent: int = None):
     """
-    - Convert IEEE FP32/64 to Microsoft floating point (MSFP), where an exponent is shared over all elements in a block.
-    - `e_shared x [(-1)^s1 x mantissa1, (-1)^s2 x mantissa2, ...]`
-    - See https://proceedings.neurips.cc/paper/2020/file/747e32ab0fea7fbd2ad9ec03daa3f840-Paper.pdf
+    - Convert IEEE FP32/64 to Microscaling Interger (MXINT), where an exponent is shared over all elements in a block.
+    - https://arxiv.org/pdf/2310.10537.pdf
+    - https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf
 
     ---
-    - forward: convert IEEE FP32/64 to MSFP
+    - forward: convert IEEE FP32/64 to MXINT
     - backward: STE
 
     ---
     - `width`: The number of mantissa bits + 1 (the sign bit)
-    - `exponent_width`: the number of exponent bits, which is shared over a block
-    - `exponent_bias`: the exponent bias, if None, `2**(exponent_bits-1)-1` will be used
-    - `block_size`: a list of integers where each integer is the block size on that dimension. See function `block`.
-
+    - `exponent_width`: the number of exponent bits
     """
 
     exponent_bias = 2 ** (exponent_width - 1) - 1
@@ -190,7 +187,7 @@ class MXIntLinear(_LinearBase):
 
 
 class MXIntRelu(relu._ReLUBase):
-    def __init__(self, inplace: bool = False, config = None, bypass = False):
+    def __init__(self, inplace: bool = False, config=None, bypass=False):
         assert config is not None, "config is None!"
         super().__init__(inplace)
 

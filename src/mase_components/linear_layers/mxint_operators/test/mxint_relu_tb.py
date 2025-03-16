@@ -21,6 +21,7 @@ torch.manual_seed(0)
 # from mase_cocotb import Testbench, StreamDriver, StreamMonitor, mase_runner
 from utils import MXIntRelu
 
+
 class MXIntReluTB(Testbench):
     def __init__(self, dut) -> None:
         super().__init__(dut, dut.clk, dut.rst)
@@ -56,7 +57,7 @@ class MXIntReluTB(Testbench):
                     "DATA_IN_0_PARALLELISM_DIM_0"
                 ),
             },
-            bypass=True
+            bypass=True,
         )
 
         # Set verbosity of driver and monitor loggers to debug
@@ -71,7 +72,7 @@ class MXIntReluTB(Testbench):
         self.log.info(f"Mantissa Tensor: {mtensor}")
         self.log.info(f"Exponenr Tensor: {etensor}")
         tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
-        return tensor_inputs
+        return qtensor, tensor_inputs
 
     def generate_inputs(self):
         return torch.randn(
@@ -87,11 +88,10 @@ class MXIntReluTB(Testbench):
         self.data_out_0_monitor.ready.value = 1
 
         inputs = self.generate_inputs()
-        exp_out = self.model(inputs)
 
         # * Load the inputs driver
         self.log.info(f"Processing inputs: {inputs}")
-        inputs = self.preprocess_tensor_for_mxint(
+        quantized, inputs = self.preprocess_tensor_for_mxint(
             tensor=inputs,
             config={
                 "width": self.get_parameter("DATA_IN_0_PRECISION_0"),
@@ -104,9 +104,10 @@ class MXIntReluTB(Testbench):
         )
         self.data_in_0_driver.load_driver(inputs)
 
+        exp_out = self.model(quantized)
         # * Load the output monitor
         self.log.info(f"Processing outputs: {exp_out}")
-        outs = self.preprocess_tensor_for_mxint(
+        _, outs = self.preprocess_tensor_for_mxint(
             tensor=exp_out,
             config={
                 "width": self.get_parameter("DATA_IN_0_PRECISION_0"),
@@ -128,6 +129,7 @@ async def cocotb_test(dut):
     tb = MXIntReluTB(dut)
     await tb.run_test(us=100)
 
+
 def get_relu_config(kwargs={}):
     config = {
         "DATA_IN_0_TENSOR_SIZE_DIM_0": 2,
@@ -138,6 +140,7 @@ def get_relu_config(kwargs={}):
 
     config.update(kwargs)
     return config
+
 
 @pytest.mark.dev
 def test_relu():
@@ -155,6 +158,7 @@ def test_relu():
             ),
         ],
     )
+
 
 if __name__ == "__main__":
     test_relu()
