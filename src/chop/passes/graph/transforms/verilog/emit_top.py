@@ -91,7 +91,7 @@ def interface_template(
     node_name: str,
     direction: Literal["input", "output", "logic"],
 ):
-    suffix = ';' if direction == 'logic' else ','
+    suffix = ";" if direction == "logic" else ","
     match type:
         case "fixed":
             out = f"""
@@ -101,7 +101,9 @@ def interface_template(
     {direction} [{param_name}_PRECISION_0-1:0] m_{var_name} [{'*'.join(parallelism_params)}-1:0]{suffix}
     {direction} [{param_name}_PRECISION_1-1:0] e_{var_name}{suffix}"""
         case None:
-            raise ValueError(f"Missing type information for {node_name} {param_name}, {var_name}")
+            raise ValueError(
+                f"Missing type information for {node_name} {param_name}, {var_name}"
+            )
         case t:
             raise NotImplementedError(
                 f"Unsupported type format {t} for {node_name} {param_name}, {var_name}"
@@ -113,74 +115,81 @@ def interface_template(
     {'logic' if direction == 'logic' else 'output' if direction == 'input' else 'input '} {var_name}_ready{suffix}"""
     )
 
+
 def module_interface_template(
-            type: str | None,
-            port_name: str,
-            signal_name: str,
-            node_name: str,
-        ):
-            match type:
-                case "fixed":
-                    out = f"""
+    type: str | None,
+    port_name: str,
+    signal_name: str,
+    node_name: str,
+):
+    match type:
+        case "fixed":
+            out = f"""
     .{port_name}({signal_name}),"""
-                case "mxint":
-                    out = f"""
+        case "mxint":
+            out = f"""
     .m{port_name}(m_{signal_name}),
     .e{port_name}(e_{signal_name}),"""
-                case None:
-                    raise ValueError(f"Missing type information for {node_name} {port_name} {signal_name}")
-                case t:
-                    raise NotImplementedError(
-                        f"Unsupported type format {t} for {node_name} {port_name} {signal_name}"
-                    )
-            return (
-                out
-                + f"""
+        case None:
+            raise ValueError(
+                f"Missing type information for {node_name} {port_name} {signal_name}"
+            )
+        case t:
+            raise NotImplementedError(
+                f"Unsupported type format {t} for {node_name} {port_name} {signal_name}"
+            )
+    return (
+        out
+        + f"""
     .{port_name}_valid({signal_name}_valid),
     .{port_name}_ready({signal_name}_ready),"""
-            )
-            
+    )
+
+
 def wiring_top_template(
-            type: str | None,
-            interface_signal: str,
-            internal_signal: str,
-            direction:  Literal["input", "output"],
-            node_name: str,
-        ):
-            match type:
-                case "fixed":
-                    if direction == 'input':
-                        out = f"""
+    type: str | None,
+    interface_signal: str,
+    internal_signal: str,
+    direction: Literal["input", "output"],
+    node_name: str,
+):
+    match type:
+        case "fixed":
+            if direction == "input":
+                out = f"""
 assign {internal_signal} = {interface_signal};"""
-                    else:
-                        out = f"""
-assign {interface_signal} = {internal_signal};"""    
-                case "mxint":
-                    if direction == 'input':
-                        out = f"""
+            else:
+                out = f"""
+assign {interface_signal} = {internal_signal};"""
+        case "mxint":
+            if direction == "input":
+                out = f"""
 assign m_{internal_signal} = m_{interface_signal};
 assign e_{internal_signal} = e_{interface_signal};"""
-                    else:
-                        out = f"""
+            else:
+                out = f"""
 assign m_{interface_signal} = m_{internal_signal};
 assign e_{interface_signal} = e_{internal_signal};"""
-                case None:
-                    raise ValueError(f"Missing type information for {node_name} {interface_signal} {internal_signal}")
-                case t:
-                    raise NotImplementedError(
-                        f"Unsupported type format {t} for {node_name} {interface_signal} {internal_signal}"
-                    )
-            if direction == 'input':
-                out += f"""
+        case None:
+            raise ValueError(
+                f"Missing type information for {node_name} {interface_signal} {internal_signal}"
+            )
+        case t:
+            raise NotImplementedError(
+                f"Unsupported type format {t} for {node_name} {interface_signal} {internal_signal}"
+            )
+    if direction == "input":
+        out += f"""
 assign {interface_signal}_ready = {internal_signal}_ready;
 assign {internal_signal}_valid    = {interface_signal}_valid;
                 """
-            else:
-                                out += f"""
+    else:
+        out += f"""
 assign {internal_signal}_ready = {interface_signal}_ready;
 assign {interface_signal}_valid    = {internal_signal}_valid;
                 """
-            return out
+    return out
+
 
 # =============================================================================
 # Verilog parameters
@@ -322,13 +331,13 @@ class VerilogSignalEmitter:
                     arg = "data_in_0"
 
                 signals += interface_template(
-                        arg_info.get("type", None),
-                        var_name=f"{node_name}_{arg}",
-                        param_name=f"{node_name}_{arg_name}",
-                        parallelism_params=parallelism_params,
-                        node_name=node_name,
-                        direction="logic",
-                    )
+                    arg_info.get("type", None),
+                    var_name=f"{node_name}_{arg}",
+                    param_name=f"{node_name}_{arg_name}",
+                    parallelism_params=parallelism_params,
+                    node_name=node_name,
+                    direction="logic",
+                )
 
         # Output signals
         for result, result_info in (
@@ -351,7 +360,7 @@ class VerilogSignalEmitter:
                     for param in parameter_map
                     if f"{node_name}_{result_name}_PARALLELISM_DIM" in param
                 ]
-                
+
                 signals += interface_template(
                     result_info.get("type", None),
                     var_name=f"{node_name}_{result}",
@@ -457,7 +466,12 @@ class VerilogInternalComponentEmitter:
                 parameters += f"    .{param}({node_name}_{param}),\n"
         parameters = _remove_last_comma(parameters)
 
-        signals = module_interface_template(value.get('type', None), port_name='data_out', signal_name=f"{node_name}_{key}", node_name=node_name)
+        signals = module_interface_template(
+            value.get("type", None),
+            port_name="data_out",
+            signal_name=f"{node_name}_{key}",
+            node_name=node_name,
+        )
         signals = _remove_last_comma(signals)
         return f"""
 {component_name} #(
@@ -489,7 +503,6 @@ class VerilogInternalComponentEmitter:
         """
 
     def emit(self, node, parameter_map):
-        
 
         node_name = vf(node.name)
         component_name = node.meta["mase"].parameters["hardware"]["module"]
@@ -518,13 +531,21 @@ class VerilogInternalComponentEmitter:
             for key, value in node.meta["mase"].parameters["common"]["args"].items():
                 if "inplace" in key or not isinstance(value, dict):
                     continue
-                signals += module_interface_template(value.get('type', None), port_name=key, signal_name=f"{node_name}_{key}", node_name=node_name)
-
+                signals += module_interface_template(
+                    value.get("type", None),
+                    port_name=key,
+                    signal_name=f"{node_name}_{key}",
+                    node_name=node_name,
+                )
 
             # Emit component instantiation output signals
             for key, value in node.meta["mase"].parameters["common"]["results"].items():
-                signals += module_interface_template(value.get('type', None), port_name=key, signal_name=f"{node_name}_{key}", node_name=node_name)
-            
+                signals += module_interface_template(
+                    value.get("type", None),
+                    port_name=key,
+                    signal_name=f"{node_name}_{key}",
+                    node_name=node_name,
+                )
 
         # Remove final comma in signal list
         signals = _remove_last_comma(signals)
@@ -714,24 +735,28 @@ class VerilogWireEmitter:
                 node.meta["mase"].parameters["common"]["args"].items()
             ):
                 if is_real_input_arg(node, arg_idx):
-                    wires += wiring_top_template(arg_info.get('type', None), interface_signal=f"data_in_{i}", internal_signal=f"{node_name}_{arg}", node_name=node_name, direction='input')
-                    # wires += f"""
-# assign data_in_{i}_ready = {node_name}_{arg}_ready;
-# assign {node_name}_{arg}_valid    = data_in_{i}_valid;
-# assign {node_name}_{arg}    = data_in_{i};
-# """
+                    wires += wiring_top_template(
+                        arg_info.get("type", None),
+                        interface_signal=f"data_in_{i}",
+                        internal_signal=f"{node_name}_{arg}",
+                        node_name=node_name,
+                        direction="input",
+                    )
                     i += 1
         i = 0
         for node in nodes_out:
             node_name = vf(node.name)
-            for (result, result_info) in node.meta["mase"].parameters["common"]["results"].items():
+            for result, result_info in (
+                node.meta["mase"].parameters["common"]["results"].items()
+            ):
                 if "data_out" in result:
-                    wires += wiring_top_template(result_info.get('type', None), interface_signal=f"data_out_{i}", internal_signal=f"{node_name}_{result}", node_name=node_name, direction='output')
-#                     wires += f"""
-# assign data_out_{i}_valid = {node_name}_{result}_valid;
-# assign {node_name}_{result}_ready    = data_out_{i}_ready;
-# assign data_out_{i} = {node_name}_{result};
-# """
+                    wires += wiring_top_template(
+                        result_info.get("type", None),
+                        interface_signal=f"data_out_{i}",
+                        internal_signal=f"{node_name}_{result}",
+                        node_name=node_name,
+                        direction="output",
+                    )
                     i += 1
 
         # TODO: emit off-chip parameter interface
