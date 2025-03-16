@@ -1,4 +1,7 @@
-from mase_components.linear_layers.mxint_operators.test.utils import block_mxint_quant, pack_tensor_to_mx_listed_chunk
+from mase_components.linear_layers.mxint_operators.test.utils import (
+    block_mxint_quant,
+    pack_tensor_to_mx_listed_chunk,
+)
 import logging, torch
 from pathlib import Path
 from textwrap import indent
@@ -17,7 +20,12 @@ torch.manual_seed(0)
 
 import cocotb
 from mase_cocotb.testbench import Testbench
-from mase_cocotb.interfaces.streaming import MultiSignalStreamDriver, MultiSignalStreamMonitor, StreamDriver, StreamMonitor
+from mase_cocotb.interfaces.streaming import (
+    MultiSignalStreamDriver,
+    MultiSignalStreamMonitor,
+    StreamDriver,
+    StreamMonitor,
+)
 
 
 import dill
@@ -100,6 +108,8 @@ def _emit_cocotb_tb(graph):
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
                         check=True,
+                        signed=False,
+                        off_by_one=True,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
@@ -135,19 +145,23 @@ def _emit_cocotb_tb(graph):
             for arg, arg_batches in in_tensors.items():
                 # Quantize input tensor according to precision
                 if len(self.input_precision) > 1:
-                    config={
+                    config = {
                         "width": self.get_parameter(f"{_cap(arg)}_PRECISION_0"),
                         "exponent_width": self.get_parameter(
                             f"{_cap(arg)}_PRECISION_1"
                         ),
                     }
-                    parallelism=[
+                    parallelism = [
                         self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_1"),
                         self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_0"),
                     ]
                     print(config, parallelism, arg_batches.shape)
-                    (qtensor, mtensor, etensor) = block_mxint_quant(arg_batches, config, parallelism)
-                    tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
+                    (qtensor, mtensor, etensor) = block_mxint_quant(
+                        arg_batches, config, parallelism
+                    )
+                    tensor_inputs = pack_tensor_to_mx_listed_chunk(
+                        mtensor, etensor, parallelism
+                    )
 
                 else:
                     # TO DO: convert to integer equivalent of floating point representation
@@ -157,27 +171,29 @@ def _emit_cocotb_tb(graph):
 
         def load_monitors(self, expectation):
             # Process the expectation tensor
-            config={
+            config = {
                 "width": self.get_parameter("DATA_OUT_0_PRECISION_0"),
-                "exponent_width": self.get_parameter(
-                    "DATA_OUT_0_PRECISION_1"
-                ),
+                "exponent_width": self.get_parameter("DATA_OUT_0_PRECISION_1"),
             }
-            parallelism=[
+            parallelism = [
                 self.get_parameter("DATA_IN_0_PARALLELISM_DIM_1"),
                 self.get_parameter("DATA_IN_0_PARALLELISM_DIM_0"),
             ]
 
             print(config, parallelism)
 
-            (qtensor, mtensor, etensor) = block_mxint_quant(expectation, config, parallelism)
-            tensor_output = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
+            (qtensor, mtensor, etensor) = block_mxint_quant(
+                expectation, config, parallelism
+            )
+            tensor_output = pack_tensor_to_mx_listed_chunk(
+                mtensor, etensor, parallelism
+            )
 
-            # convert the exponents from the biased form to signed
-            bias = 2 ** (config['exponent_width']-1)-1
-            for i, (tensor, exp) in enumerate(tensor_output):
-                new_exp = exp -bias
-                tensor_output[i] = (tensor, new_exp)
+            # # convert the exponents from the biased form to signed
+            # bias = 2 ** (config["exponent_width"] - 1) - 1
+            # for i, (tensor, exp) in enumerate(tensor_output):
+            #     new_exp = exp - bias
+            #     tensor_output[i] = (tensor, new_exp)
 
             self.output_monitors["data_out_0"].load_monitor(tensor_output)
 

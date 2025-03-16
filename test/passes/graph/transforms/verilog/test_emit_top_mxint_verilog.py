@@ -29,8 +29,9 @@ def excepthook(exc_type, exc_value, exc_traceback):
 logger = get_logger(__name__)
 sys.excepthook = excepthook
 
-IN_FEATURES = 8
-OUT_FEATURES = 8
+IN_FEATURES = 12
+OUT_FEATURES = 12
+
 
 # --------------------------------------------------
 #   Model specifications
@@ -57,35 +58,37 @@ def test_emit_verilog_linear():
     mg = chop.MaseGraph(model=mlp)
 
     # Provide a dummy input for the graph so it can use for tracing
-    batch_size = 1
+    batch_size = 6
     x = torch.randn((batch_size, IN_FEATURES))
     dummy_in = {"x": x}
 
     mg, _ = passes.init_metadata_analysis_pass(mg, None)
     mg, _ = passes.add_common_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
 
-    block_size = 2
+    block_size = 4
+    m_width = 8
+    e_width = 6
     # Quantize to int
     quan_args = {
-            "by": "type",
-            "default": {
-                "config": {
-                    "name": "mxint",
-                    # data
-                    "data_in_width": 12,
-                    "data_in_exponent_width": 4,
-                    "data_in_block_size": [1, block_size],
-                    # weight
-                    "weight_width": 12,
-                    "weight_exponent_width": 4,
-                    "weight_block_size": [1, block_size],
-                    # bias
-                    "bias_width": 12,
-                    "bias_exponent_width": 4,
-                    "bias_block_size": [1, block_size],
-                }
-            },
-        }
+        "by": "type",
+        "default": {
+            "config": {
+                "name": "mxint",
+                # data
+                "data_in_width": m_width,
+                "data_in_exponent_width": e_width,
+                "data_in_block_size": [1, block_size],
+                # weight
+                "weight_width": m_width,
+                "weight_exponent_width": e_width,
+                "weight_block_size": [1, block_size],
+                # bias
+                "bias_width": m_width,
+                "bias_exponent_width": e_width,
+                "bias_block_size": [1, block_size],
+            }
+        },
+    }
 
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
@@ -94,22 +97,29 @@ def test_emit_verilog_linear():
 
     # hack to pass the correct parallelism parameters around
     for node in mg.fx_graph.nodes:
-        node_meta = node.meta['mase'].parameters['common']
-        match node_meta['mase_op']:
-            case 'linear':
-                args = node_meta['args']
-                args['data_in_0']['parallelism_0'] = block_size
-                args['data_in_0']['parallelism_1'] = block_parallelism
-                args['weight']['parallelism_0'] = block_size
-                args['weight']['parallelism_1'] = block_size
-                args['bias']['parallelism_0'] = block_size
-                args['bias']['parallelism_1'] = block_parallelism
+        node_meta = node.meta["mase"].parameters["common"]
+        match node_meta["mase_op"]:
+            case "linear":
+                args = node_meta["args"]
+                args["data_in_0"]["parallelism_0"] = block_size
+                args["data_in_0"]["parallelism_1"] = block_parallelism
+                args["weight"]["parallelism_0"] = block_size
+                args["weight"]["parallelism_1"] = block_size
+                args["bias"]["parallelism_0"] = block_size
+                args["bias"]["parallelism_1"] = 1
                 
-    mg.model.fc1.weight.data = torch.eye(IN_FEATURES) 
+                results = node_meta["results"]
+                results["data_out_0"]["parallelism_0"] = block_size
+                results["data_out_0"]["parallelism_1"] = block_parallelism
 
-    mg, _ = passes.add_hardware_metadata_analysis_pass(
-        mg
-    )
+    mg.model.fc1.weight.data = torch.eye(IN_FEATURES)
+    mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
+
+    print(mg.model)
+    breakpoint()
+    # print(mg.model.config)
+
+    mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
     mg, _ = passes.report_node_hardware_type_analysis_pass(mg)  # pretty print
 
     mg, _ = passes.emit_verilog_top_transform_pass(mg)
@@ -120,7 +130,7 @@ def test_emit_verilog_linear():
     )
     # mg, _ = passes.emit_vivado_project_transform_pass(mg)
 
-    simulate(skip_build=False, skip_test=False, simulator="verilator")
+    simulate(skip_build=False, skip_test=False, simulator="verilator", waves=True)
 
 
 if __name__ == "__main__":
