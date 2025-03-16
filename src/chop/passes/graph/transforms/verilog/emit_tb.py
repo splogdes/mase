@@ -164,8 +164,8 @@ def _emit_cocotb_tb(graph):
                 ),
             }
             parallelism=[
-                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_1"),
-                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"),
+                self.get_parameter("DATA_IN_0_PARALLELISM_DIM_1"),
+                self.get_parameter("DATA_IN_0_PARALLELISM_DIM_0"),
             ]
 
             print(config, parallelism)
@@ -173,13 +173,12 @@ def _emit_cocotb_tb(graph):
             (qtensor, mtensor, etensor) = block_mxint_quant(expectation, config, parallelism)
             tensor_output = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
 
-            # Set expectation for each monitor
-            # for block in output_blocks:
-            #     # ! TO DO: generalize to multi-output models
-            #     if len(block) < self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"):
-            #         block = block + [0] * (
-            #             self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0") - len(block)
-            #         )
+            # convert the exponents from the biased form to signed
+            bias = 2 ** (config['exponent_width']-1)-1
+            for i, (tensor, exp) in enumerate(tensor_output):
+                new_exp = exp -bias
+                tensor_output[i] = (tensor, new_exp)
+
             self.output_monitors["data_out_0"].load_monitor(tensor_output)
 
             # Drive the in-flight flag for each monitor
