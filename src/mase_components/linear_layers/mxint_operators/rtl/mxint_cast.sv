@@ -148,9 +148,9 @@ module mxint_cast #(
   // Compute Shift Value
   // =============================
 
-  localparam SHIFT_WIDTH = max($clog2(OUT_MAN_WIDTH * 5), $clog2(LOSSLESSS_EDATA_WIDTH * 5), 0);
+  localparam SHIFT_WIDTH = max(LOSSLESSS_EDATA_WIDTH, IN_MAN_WIDTH, OUT_MAN_WIDTH) + 1;
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
-  assign shift_value = $signed(edata_out_full - edata_out) + OUT_MAN_WIDTH - log2_max_value - 2;
+  assign shift_value = $signed(edata_out_full - edata_out) + $signed(OUT_MAN_WIDTH - log2_max_value - 2);
 
   // =============================
   // Compute Output Mantissa
