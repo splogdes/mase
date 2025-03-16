@@ -421,6 +421,33 @@ class VerilogInternalComponentEmitter:
         """
 
     def emit(self, node, parameter_map):
+        
+        def module_interface_template(
+            type: str | None,
+            port_name: str,
+            signal_name: str,
+            node_name: str,
+        ):
+            match type:
+                case "fixed":
+                    out = f"""
+    .{port_name}({signal_name}),"""
+                case "mxint":
+                    out = f"""
+    .m{port_name}(m_{signal_name}),
+    .e{port_name}(e_{signal_name}),"""
+                case None:
+                    raise ValueError(f"Missing type information for {node_name} {port_name} {signal_name}")
+                case t:
+                    raise NotImplementedError(
+                        f"Unsupported type format {t} for {node_name} {port_name} {signal_name}"
+                    )
+            return (
+                out
+                + f"""
+    .{port_name}_valid({signal_name}_valid),
+    .{port_name}_ready({signal_name}_ready),"""
+            )
         node_name = vf(node.name)
         component_name = node.meta["mase"].parameters["hardware"]["module"]
         signals = ""
@@ -448,19 +475,13 @@ class VerilogInternalComponentEmitter:
             for key, value in node.meta["mase"].parameters["common"]["args"].items():
                 if "inplace" in key or not isinstance(value, dict):
                     continue
-                signals += f"""
-    .{key}({node_name}_{key}),
-    .{key}_valid({node_name}_{key}_valid),
-    .{key}_ready({node_name}_{key}_ready),
-        """
+                signals += module_interface_template(value.get('type', None), port_name=key, signal_name=f"{node_name}_{key}", node_name=node_name)
+
 
             # Emit component instantiation output signals
             for key, value in node.meta["mase"].parameters["common"]["results"].items():
-                signals += f"""
-    .{key}({node_name}_{key}),
-    .{key}_valid({node_name}_{key}_valid),
-    .{key}_ready({node_name}_{key}_ready),
-        """
+                signals += module_interface_template(value.get('type', None), port_name=key, signal_name=f"{node_name}_{key}", node_name=node_name)
+            
 
         # Remove final comma in signal list
         signals = _remove_last_comma(signals)
