@@ -1,3 +1,4 @@
+from mase_components.linear_layers.mxint_operators.test.utils import block_mxint_quant, pack_tensor_to_mx_listed_chunk
 import logging, torch
 from pathlib import Path
 from textwrap import indent
@@ -16,7 +17,7 @@ torch.manual_seed(0)
 
 import cocotb
 from mase_cocotb.testbench import Testbench
-from mase_cocotb.interfaces.streaming import StreamDriver, StreamMonitor
+from mase_cocotb.interfaces.streaming import MultiSignalStreamDriver, MultiSignalStreamMonitor, StreamDriver, StreamMonitor
 
 
 import dill
@@ -32,7 +33,7 @@ def _cap(name):
 
 def _emit_cocotb_test(graph, pass_args={}):
 
-    wait_time = pass_args.get("wait_time", 2)
+    wait_time = pass_args.get("wait_time", 100)
     wait_unit = pass_args.get("wait_units", "ms")
     batch_size = pass_args.get("batch_size", 1)
 
@@ -57,7 +58,8 @@ async def test(dut):
     tb.load_drivers(in_tensors)
     tb.load_monitors(exp_out)
 
-    await tb.wait_end(timeout={wait_time}, timeout_unit="{wait_unit}")
+    # await tb.wait_end(timeout={wait_time}, timeout_unit="{wait_unit}")
+    await cocotb.triggers.Timer(100, 'us')
 """
 
     tb_path = Path.home() / ".mase" / "top" / "hardware" / "test" / "mase_top_tb"
@@ -79,9 +81,9 @@ def _emit_cocotb_tb(graph):
                 for arg in node.meta["mase"]["common"]["args"].keys():
                     if "data_in" not in arg:
                         continue
-                    self.input_drivers[arg] = StreamDriver(
+                    self.input_drivers[arg] = MultiSignalStreamDriver(
                         dut.clk,
-                        getattr(dut, arg),
+                        (getattr(dut, f"m_{arg}"), getattr(dut, f"e_{arg}")),
                         getattr(dut, f"{arg}_valid"),
                         getattr(dut, f"{arg}_ready"),
                     )
@@ -92,12 +94,12 @@ def _emit_cocotb_tb(graph):
                 for result in node.meta["mase"]["common"]["results"].keys():
                     if "data_out" not in result:
                         continue
-                    self.output_monitors[result] = StreamMonitor(
+                    self.output_monitors[result] = MultiSignalStreamMonitor(
                         dut.clk,
-                        getattr(dut, result),
+                        (getattr(dut, f"m_{result}"), getattr(dut, f"e_{result}")),
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
-                        check=False,
+                        check=True,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
@@ -133,63 +135,55 @@ def _emit_cocotb_tb(graph):
             for arg, arg_batches in in_tensors.items():
                 # Quantize input tensor according to precision
                 if len(self.input_precision) > 1:
-                    from mase_cocotb.utils import fixed_preprocess_tensor
-
-                    in_data_blocks = fixed_preprocess_tensor(
-                        tensor=arg_batches,
-                        q_config={
-                            "width": self.get_parameter(f"{_cap(arg)}_PRECISION_0"),
-                            "frac_width": self.get_parameter(
-                                f"{_cap(arg)}_PRECISION_1"
-                            ),
-                        },
-                        parallelism=[
-                            self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_1"),
-                            self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_0"),
-                        ],
-                    )
+                    config={
+                        "width": self.get_parameter(f"{_cap(arg)}_PRECISION_0"),
+                        "exponent_width": self.get_parameter(
+                            f"{_cap(arg)}_PRECISION_1"
+                        ),
+                    }
+                    parallelism=[
+                        self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_1"),
+                        self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_0"),
+                    ]
+                    print(config, parallelism, arg_batches.shape)
+                    (qtensor, mtensor, etensor) = block_mxint_quant(arg_batches, config, parallelism)
+                    tensor_inputs = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
 
                 else:
                     # TO DO: convert to integer equivalent of floating point representation
                     pass
 
-                # Append all input blocks to input driver
-                # ! TO DO: generalize
-                block_size = self.get_parameter(
-                    "DATA_IN_0_PARALLELISM_DIM_0"
-                ) * self.get_parameter("DATA_IN_0_PARALLELISM_DIM_1")
-                for block in in_data_blocks:
-                    if len(block) < block_size:
-                        block = block + [0] * (block_size - len(block))
-                    self.input_drivers[arg].append(block)
+                self.input_drivers[arg].load_driver(tensor_inputs)
 
         def load_monitors(self, expectation):
-            from mase_cocotb.utils import fixed_preprocess_tensor
-
             # Process the expectation tensor
-            output_blocks = fixed_preprocess_tensor(
-                tensor=expectation,
-                q_config={
-                    "width": self.get_parameter(f"DATA_OUT_0_PRECISION_0"),
-                    "frac_width": self.get_parameter(f"DATA_OUT_0_PRECISION_1"),
-                },
-                parallelism=[
-                    self.get_parameter(f"DATA_OUT_0_PARALLELISM_DIM_1"),
-                    self.get_parameter(f"DATA_OUT_0_PARALLELISM_DIM_0"),
-                ],
-            )
+            config={
+                "width": self.get_parameter("DATA_OUT_0_PRECISION_0"),
+                "exponent_width": self.get_parameter(
+                    "DATA_OUT_0_PRECISION_1"
+                ),
+            }
+            parallelism=[
+                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_1"),
+                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"),
+            ]
+
+            print(config, parallelism)
+
+            (qtensor, mtensor, etensor) = block_mxint_quant(expectation, config, parallelism)
+            tensor_output = pack_tensor_to_mx_listed_chunk(mtensor, etensor, parallelism)
 
             # Set expectation for each monitor
-            for block in output_blocks:
-                # ! TO DO: generalize to multi-output models
-                if len(block) < self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"):
-                    block = block + [0] * (
-                        self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0") - len(block)
-                    )
-                self.output_monitors["data_out_0"].expect(block)
+            # for block in output_blocks:
+            #     # ! TO DO: generalize to multi-output models
+            #     if len(block) < self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"):
+            #         block = block + [0] * (
+            #             self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0") - len(block)
+            #         )
+            self.output_monitors["data_out_0"].load_monitor(tensor_output)
 
             # Drive the in-flight flag for each monitor
-            self.output_monitors["data_out_0"].in_flight = True
+            # self.output_monitors["data_out_0"].in_flight = True
 
     # Serialize testbench object to be instantiated within test by cocotb runner
     cls_obj = MaseGraphTB
