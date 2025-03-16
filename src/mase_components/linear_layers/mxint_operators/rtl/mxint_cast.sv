@@ -30,16 +30,6 @@ module mxint_cast #(
 );
 
   // =============================
-  // Initial Checks
-  // =============================
-
-  // initial begin
-  //   assert((OUT_EXP_WIDTH >= IN_EXP_WIDTH) && (OUT_MAN_WIDTH <= IN_MAN_WIDTH))
-  //     else $fatal("This configuration is not supported (OUT_EXP_WIDTH >= IN_EXP_WIDTH) && (OUT_MAN_WIDTH <= IN_MAN_WIDTH)");
-  // end
-
-
-  // =============================
   // Internal Signals
   // =============================
 
@@ -158,15 +148,20 @@ module mxint_cast #(
   // Compute Shift Value
   // =============================
 
-  localparam SHIFT_WIDTH = 32;
+  localparam SHIFT_WIDTH = max($clog2(OUT_MAN_WIDTH * 5), $clog2(LOSSLESSS_EDATA_WIDTH * 5), 0);
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
-  assign shift_value = edata_out_full - edata_out - log2_max_value + OUT_MAN_WIDTH - 2;
+  assign shift_value = $signed(edata_out_full - edata_out) + OUT_MAN_WIDTH - log2_max_value - 2;
+
 
   always_comb begin
-    assert(shift_value == $signed(edata_out_full - edata_out - log2_max_value + OUT_MAN_WIDTH - 2))
-      else $fatal("Shift value is not correct");
-    assert(edata_out_full == $signed(log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT))
-      else $fatal("Output exponent is not correct");
+    assert (shift_value == $signed(
+        $signed(edata_out_full - edata_out) + $signed(OUT_MAN_WIDTH - log2_max_value - 2)
+    ));
+    else $fatal("Shift value is not correct");
+    assert (edata_out_full == $signed(
+        log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT
+    ))
+    else $fatal("Output exponent is not correct");
   end
 
   // =============================
@@ -177,7 +172,9 @@ module mxint_cast #(
 
     always_comb begin
 
-      if (shift_value >= OUT_MAN_WIDTH)
+      if (mbuffer_data_for_out[i] == 0) mdata_out[i] = 0;
+
+      else if (shift_value > OUT_MAN_WIDTH)
         if (mbuffer_data_for_out[i] < 0) mdata_out[i] = MIN_DATA_OUT;
         else mdata_out[i] = MAX_DATA_OUT;
 
@@ -185,10 +182,10 @@ module mxint_cast #(
         if (mbuffer_data_for_out[i] < 0) mdata_out[i] = -1;
         else mdata_out[i] = 0;
 
-      else if (mbuffer_data_for_out[i] > (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      else if (mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
         mdata_out[i] = MAX_DATA_OUT;
 
-      else if (-mbuffer_data_for_out[i] > (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      else if (-mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
         mdata_out[i] = MIN_DATA_OUT;
 
       else if (shift_value >= 0) mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
