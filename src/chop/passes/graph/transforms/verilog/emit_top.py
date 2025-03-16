@@ -113,6 +113,32 @@ def interface_template(
     {'logic' if direction == 'logic' else 'output' if direction == 'input' else 'input '} {var_name}_ready{suffix}"""
     )
 
+def module_interface_template(
+            type: str | None,
+            port_name: str,
+            signal_name: str,
+            node_name: str,
+        ):
+            match type:
+                case "fixed":
+                    out = f"""
+    .{port_name}({signal_name}),"""
+                case "mxint":
+                    out = f"""
+    .m{port_name}(m_{signal_name}),
+    .e{port_name}(e_{signal_name}),"""
+                case None:
+                    raise ValueError(f"Missing type information for {node_name} {port_name} {signal_name}")
+                case t:
+                    raise NotImplementedError(
+                        f"Unsupported type format {t} for {node_name} {port_name} {signal_name}"
+                    )
+            return (
+                out
+                + f"""
+    .{port_name}_valid({signal_name}_valid),
+    .{port_name}_ready({signal_name}_ready),"""
+            )
 
 # =============================================================================
 # Verilog parameters
@@ -389,15 +415,15 @@ class VerilogInternalComponentEmitter:
                 parameters += f"    .{param}({node_name}_{param}),\n"
         parameters = _remove_last_comma(parameters)
 
+        signals = module_interface_template(value.get('type', None), port_name='data_out', signal_name=f"{node_name}_{key}", node_name=node_name)
+        signals = _remove_last_comma(signals)
         return f"""
 {component_name} #(
 {parameters}
 ) {component_name_inst} (
     .clk(clk),
     .rst(rst),
-    .data_out({node_name}_{key}),
-    .data_out_ready({node_name}_{key}_ready),
-    .data_out_valid({node_name}_{key}_valid)
+    {signals}
 );
 """
 
@@ -409,7 +435,7 @@ class VerilogInternalComponentEmitter:
         """
 
         node_name = vf(node.name)
-
+        # TODO@luigi support mxint here too
         return f"""
     .data_in_0       ({node_name}_data_in_0),
     .data_in_0_valid ({node_name}_data_in_0_valid),
@@ -422,32 +448,7 @@ class VerilogInternalComponentEmitter:
 
     def emit(self, node, parameter_map):
         
-        def module_interface_template(
-            type: str | None,
-            port_name: str,
-            signal_name: str,
-            node_name: str,
-        ):
-            match type:
-                case "fixed":
-                    out = f"""
-    .{port_name}({signal_name}),"""
-                case "mxint":
-                    out = f"""
-    .m{port_name}(m_{signal_name}),
-    .e{port_name}(e_{signal_name}),"""
-                case None:
-                    raise ValueError(f"Missing type information for {node_name} {port_name} {signal_name}")
-                case t:
-                    raise NotImplementedError(
-                        f"Unsupported type format {t} for {node_name} {port_name} {signal_name}"
-                    )
-            return (
-                out
-                + f"""
-    .{port_name}_valid({signal_name}_valid),
-    .{port_name}_ready({signal_name}_ready),"""
-            )
+
         node_name = vf(node.name)
         component_name = node.meta["mase"].parameters["hardware"]["module"]
         signals = ""
