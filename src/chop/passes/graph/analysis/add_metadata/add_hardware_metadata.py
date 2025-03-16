@@ -112,8 +112,8 @@ def add_verilog_param(node: fx.Node):
         if isinstance(arg_info, dict):
             for i, precision in enumerate(arg_info["precision"]):
                 vp[_cap(arg + f"_precision_{i}")] = arg_info["precision"][i]
-            match arg_info.get('type', None):
-                case 'fixed':
+            match arg_info.get("type", None):
+                case "fixed":
                     for dim in range(0, len(arg_info["shape"])):
                         vp[_cap(arg + f"_tensor_size_dim_{dim}")] = (
                             arg_info["shape"][len(arg_info["shape"]) - 1 - dim]
@@ -125,22 +125,26 @@ def add_verilog_param(node: fx.Node):
                             # Take the minimum between...
                             vp[_cap(arg + f"_parallelism_dim_{dim}")] = min(
                                 # The defined max parallelism for this dimension
-                                node.meta["mase"]["hardware"]["max_parallelism"][::-1][dim],
+                                node.meta["mase"]["hardware"]["max_parallelism"][::-1][
+                                    dim
+                                ],
                                 # The size of this dimension
                                 arg_info["shape"][::-1][dim],
                             )
                         # Otherwise, assign to tensor size by default
                         else:
-                            vp[_cap(arg + f"_parallelism_dim_{dim}")] = arg_info["shape"][::-1][
-                                dim
-                            ]
-                case 'mxint':
-                    for dim, dim_value in  enumerate(reversed(arg_info['shape'])):
+                            vp[_cap(arg + f"_parallelism_dim_{dim}")] = arg_info[
+                                "shape"
+                            ][::-1][dim]
+                case "mxint":
+                    for dim, dim_value in enumerate(reversed(arg_info["shape"])):
                         vp[_cap(arg + f"_tensor_size_dim_{dim}")] = dim_value
-                        if (parallel := arg_info.get(f'parallelism_{dim}', None)):
+                        if parallel := arg_info.get(f"parallelism_{dim}", None):
                             vp[_cap(arg + f"_parallelism_dim_{dim}")] = parallel
                 case t:
-                    raise NotImplementedError(f'Unsupported quantization type {t} for {node.name} {arg}')
+                    raise NotImplementedError(
+                        f"Unsupported quantization type {t} for {node.name} {arg}"
+                    )
         elif type(arg_info) == bool:
             vp[_cap(arg)] = 1 if arg_info else 0
         else:
@@ -150,36 +154,45 @@ def add_verilog_param(node: fx.Node):
         if isinstance(result_info, dict):
             for i, precision in enumerate(result_info["precision"]):
                 vp[_cap(result + f"_precision_{i}")] = result_info["precision"][i]
-                match result_info.get('type', None):
-                    case 'fixed':
+                match result_info.get("type", None):
+                    case "fixed":
                         for dim in range(0, len(result_info["shape"])):
                             vp[_cap(result + f"_tensor_size_dim_{dim}")] = (
-                                result_info["shape"][len(result_info["shape"]) - 1 - dim]
+                                result_info["shape"][
+                                    len(result_info["shape"]) - 1 - dim
+                                ]
                                 if dim < len(result_info["shape"])
                                 else 1
                             )
                             # Check if max parallelism is defined
-                            if node.meta["mase"]["hardware"]["max_parallelism"] is not None:
+                            if (
+                                node.meta["mase"]["hardware"]["max_parallelism"]
+                                is not None
+                            ):
                                 # Take the minimum between...
                                 vp[_cap(result + f"_parallelism_dim_{dim}")] = min(
                                     # The defined max parallelism for this dimension
-                                    node.meta["mase"]["hardware"]["max_parallelism"][::-1][dim],
+                                    node.meta["mase"]["hardware"]["max_parallelism"][
+                                        ::-1
+                                    ][dim],
                                     # The size of this dimension
                                     result_info["shape"][::-1][dim],
                                 )
                             # Otherwise, assign to tensor size by default
                             else:
-                                vp[_cap(result + f"_parallelism_dim_{dim}")] = result_info["shape"][
-                                    ::-1
-                                ][dim]                
-                    case 'mxint':
-                        for dim, dim_value in  enumerate(reversed(result_info['shape'])):
+                                vp[_cap(result + f"_parallelism_dim_{dim}")] = (
+                                    result_info["shape"][::-1][dim]
+                                )
+                    case "mxint":
+                        for dim, dim_value in enumerate(reversed(result_info["shape"])):
                             vp[_cap(result + f"_tensor_size_dim_{dim}")] = dim_value
-                            if (parallel := result_info.get(f'parallelism_{dim}', None)):
+                            if parallel := result_info.get(f"parallelism_{dim}", None):
                                 vp[_cap(result + f"_parallelism_dim_{dim}")] = parallel
-                                
+
                     case t:
-                        raise NotImplementedError(f'Unsupported quantization type {t} for {node.name} {result}')
+                        raise NotImplementedError(
+                            f"Unsupported quantization type {t} for {node.name} {result}"
+                        )
         else:
             vp[_cap(result)] = result_info
 
