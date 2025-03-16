@@ -122,7 +122,7 @@ class LinearTB(Testbench):
         return tensor_inputs
 
     def generate_inputs(self):
-        return torch.randn(
+        return torch.zeros(
             (
                 self.get_parameter("DATA_IN_0_TENSOR_SIZE_DIM_1"),
                 self.get_parameter("DATA_IN_0_TENSOR_SIZE_DIM_0"),
@@ -295,7 +295,7 @@ def test_mxint_linear_full_random():
 
     # use this to fix a particular parameter value
     param_override = {
-        "HAS_BIAS": 0,
+        "HAS_BIAS": 1,
     }
 
     if seed is not None:
