@@ -6,7 +6,11 @@ import time
 
 from chop.nn.quantizers.utils import block
 from chop.passes.graph.transforms.verilog.mxint_bram_template import mxint_template
-from mase_components.linear_layers.mxint_operators.test.utils import pack_tensor_to_mx_listed_chunk
+from mase_components.linear_layers.mxint_operators.test.utils import (
+    block_mxint_quant,
+    mxint_quantize,
+    pack_tensor_to_mx_listed_chunk,
+)
 import torch
 
 from chop.passes.graph.utils import vf, v2p, get_module_by_name, init_project
@@ -61,15 +65,14 @@ def emit_parameters_in_mem_internal_mxint(
     parallelism = int(
         node_verilog_info[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
     )
-    
+
     _, _, shape, _ = block(
         torch.ones(node_type_info["shape"]),
-        block_shape=[parallelism,block_size],
+        block_shape=[parallelism, block_size],
     )
     print(shape)
-    
-    total_size = math.prod(node_type_info["shape"])
 
+    total_size = math.prod(node_type_info["shape"])
 
     out_size = block_size * parallelism
     out_depth = int(total_size / out_size)
@@ -335,19 +338,30 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                 hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"],
             ]
 
-            mxint_blocks, mxint_exp = mxint_quantizer_for_hw(
+            # mxint_blocks, mxint_exp = mxint_quantizer_for_hw(
+            #     param_data,
+            #     data_width,
+            #     exponent_width,
+            #     [1,hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]],
+            #     floor=floor_values,
+            # )
+
+            # _quant, mxint_blocks, mxint_exp = mxint_quantize(param_data, data_width, exponent_width)
+
+            # breakpoint()
+            _quant, mxint_blocks, mxint_exp = block_mxint_quant(
                 param_data,
-                data_width,
-                exponent_width,
+                {"width": data_width, "exponent_width": exponent_width},
                 block_size,
-                floor=floor_values,
             )
-            
-            data_list = pack_tensor_to_mx_listed_chunk(mxint_blocks, mxint_exp, block_size)
+
+            data_list = pack_tensor_to_mx_listed_chunk(
+                mxint_blocks, mxint_exp, block_size
+            )
 
             block_buff = ""
             exp_buff = ""
-            for (ms, e) in data_list:
+            for ms, e in data_list:
                 line_values = []
                 for m in ms:
                     value = int(m)
@@ -359,7 +373,7 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
 
                 hex_str = format(int(e), "0{}X".format(exponent_width // 4))
                 exp_buff += hex_str + "\n"
-                
+
             # block_buff = ""
             # for i in range(mxint_blocks.shape[1]):
 
