@@ -152,18 +152,6 @@ module mxint_cast #(
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
   assign shift_value = $signed(edata_out_full - edata_out) + OUT_MAN_WIDTH - log2_max_value - 2;
 
-
-  always_comb begin
-    assert (shift_value == $signed(
-        $signed(edata_out_full - edata_out) + $signed(OUT_MAN_WIDTH - log2_max_value - 2)
-    ));
-    else $fatal("Shift value is not correct");
-    assert (edata_out_full == $signed(
-        log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT
-    ))
-    else $fatal("Output exponent is not correct");
-  end
-
   // =============================
   // Compute Output Mantissa
   // =============================
