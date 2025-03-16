@@ -109,13 +109,13 @@ module {node_param_name}_source #(
       .clk(clk),
       .addr0(counter),
       .ce0(ce0),
-      .q0(exponent_out)
+      .q0(edata_out)
   );
 
   // Cocotb/verilator does not support array flattening, so
   // we need to manually add some reshaping process.
   for (genvar j = 0; j < {verilog_param_name}_PARALLELISM_DIM_0 * {verilog_param_name}_PARALLELISM_DIM_1; j++)
-    assign mantissa_out[j] = data_vector[{verilog_param_name}_PRECISION_0*(j+1)-1:{verilog_param_name}_PRECISION_0*j];
+    assign mdata_out[j] = data_vector[{verilog_param_name}_PRECISION_0*(j+1)-1:{verilog_param_name}_PRECISION_0*j];
 
   assign data_out_valid = clear == 2;
 
