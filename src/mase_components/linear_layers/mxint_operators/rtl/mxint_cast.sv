@@ -29,6 +29,15 @@ module mxint_cast #(
     input  logic                            data_out_ready
 );
 
+  // =============================
+  // Initial Checks
+  // =============================
+
+  // initial begin
+  //   assert((OUT_EXP_WIDTH >= IN_EXP_WIDTH) && (OUT_MAN_WIDTH <= IN_MAN_WIDTH))
+  //     else $fatal("This configuration is not supported (OUT_EXP_WIDTH >= IN_EXP_WIDTH) && (OUT_MAN_WIDTH <= IN_MAN_WIDTH)");
+  // end
+
 
   // =============================
   // Internal Signals
@@ -47,7 +56,7 @@ module mxint_cast #(
   localparam EBIAS_IN = 2 ** (IN_EXP_WIDTH - 1) - 1;
   localparam LOSSLESSS_EDATA_WIDTH = max(LOG2_WIDTH, IN_EXP_WIDTH, OUT_EXP_WIDTH) + 2;
   localparam FIFO_DEPTH = $clog2(BLOCK_SIZE);
-  logic [LOSSLESSS_EDATA_WIDTH - 1:0] edata_out_full;
+  logic signed [LOSSLESSS_EDATA_WIDTH - 1:0] edata_out_full;
 
   localparam MAX_DATA_OUT = 2 ** (OUT_MAN_WIDTH - 1) - 1;
   localparam MIN_DATA_OUT = -MAX_DATA_OUT;
@@ -134,6 +143,7 @@ module mxint_cast #(
 
   assign edata_out_full = log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT;
 
+
   always_comb begin
 
     if (edata_out_full >= (1 << OUT_EXP_WIDTH)) edata_out = (1 << OUT_EXP_WIDTH) - 1;
@@ -148,10 +158,16 @@ module mxint_cast #(
   // Compute Shift Value
   // =============================
 
-  localparam SHIFT_WIDTH = max($clog2(IN_MAN_WIDTH), $clog2(OUT_MAN_WIDTH), 0) + 1;
+  localparam SHIFT_WIDTH = 32;
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
   assign shift_value = edata_out_full - edata_out - log2_max_value + OUT_MAN_WIDTH - 2;
 
+  always_comb begin
+    assert(shift_value == $signed(edata_out_full - edata_out - log2_max_value + OUT_MAN_WIDTH - 2))
+      else $fatal("Shift value is not correct");
+    assert(edata_out_full == $signed(log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT))
+      else $fatal("Output exponent is not correct");
+  end
 
   // =============================
   // Compute Output Mantissa
@@ -161,14 +177,18 @@ module mxint_cast #(
 
     always_comb begin
 
-      if (shift_value >= OUT_MAN_WIDTH - 1)
-        if (mbuffer_data_for_out[i] >= 0) mdata_out[i] = 0;
-        else mdata_out[i] = -1;
+      if (shift_value >= OUT_MAN_WIDTH)
+        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = MIN_DATA_OUT;
+        else mdata_out[i] = MAX_DATA_OUT;
 
-      else if (mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      else if (shift_value < -IN_MAN_WIDTH)
+        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = -1;
+        else mdata_out[i] = 0;
+
+      else if (mbuffer_data_for_out[i] > (1 << (OUT_MAN_WIDTH - shift_value - 1)))
         mdata_out[i] = MAX_DATA_OUT;
 
-      else if (-mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      else if (-mbuffer_data_for_out[i] > (1 << (OUT_MAN_WIDTH - shift_value - 1)))
         mdata_out[i] = MIN_DATA_OUT;
 
       else if (shift_value >= 0) mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
