@@ -800,9 +800,17 @@ assign {to_name}_data_in_0 = {from_name}_data_out_{select};
 
             to_name = vf(node.name)
             for i, node_in in enumerate(node.all_input_nodes):
-                to_type = node.meta['mase']['common']['args'][f'data_in_{i}'].get('type', None)
-                from_type = node_in.meta['mase'].parameters['common']['results']['data_out_0'].get('type', None)
-                assert to_type == from_type, f'Incongruent types {to_type=} {from_type=}'
+                to_type = node.meta["mase"]["common"]["args"][f"data_in_{i}"].get(
+                    "type", None
+                )
+                from_type = (
+                    node_in.meta["mase"]
+                    .parameters["common"]["results"]["data_out_0"]
+                    .get("type", None)
+                )
+                assert (
+                    to_type == from_type
+                ), f"Incongruent types {to_type=} {from_type=}"
                 from_name = vf(node_in.name)
                 wires += wiring_template(
                     to_type,

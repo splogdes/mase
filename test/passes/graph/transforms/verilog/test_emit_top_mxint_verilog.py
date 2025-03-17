@@ -93,7 +93,6 @@ def test_emit_verilog_linear():
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
 
-
     block_parallelism = 1
 
     # hack to pass the correct parallelism parameters around
@@ -112,7 +111,7 @@ def test_emit_verilog_linear():
 
                 results["data_out_0"]["parallelism_0"] = block_size
                 results["data_out_0"]["parallelism_1"] = block_parallelism
-            case 'relu':
+            case "relu":
                 args["data_in_0"]["parallelism_0"] = block_size
                 args["data_in_0"]["parallelism_1"] = block_parallelism
                 results["data_out_0"]["parallelism_0"] = block_size
