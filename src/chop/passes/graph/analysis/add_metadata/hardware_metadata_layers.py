@@ -43,63 +43,6 @@ norm: IpDescType = {
     ],
 }
 
-# linear = {
-#     "name": "fixed_linear_with_input_circular",
-#     "dependence_files": [
-#         "cast/rtl/fixed_round.sv",
-#         "cast/rtl/fixed_rounding.sv",
-#         "cast/rtl/floor_round.sv",
-#         "cast/rtl/signed_clamp.sv",
-#         "cast/rtl/fixed_signed_cast.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_dot_product.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_vector_mult.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_accumulator.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_adder_tree.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_adder_tree_layer.sv",
-#         "linear_layers/fixed_operators/rtl/fixed_mult.sv",
-#         "common/rtl/register_slice.sv",
-#         "common/rtl/join2.sv",
-#         "common/rtl/mux.sv",
-#         "common/rtl/unpacked_register_slice.sv",
-#         "common/rtl/single_element_repeat.sv",
-#         "memory/rtl/unpacked_repeat_circular_buffer.sv",
-#         "memory/rtl/input_buffer.sv",
-#         "memory/rtl/blk_mem_gen_0.sv",
-#         "memory/rtl/simple_dual_port_ram.sv",
-#         "linear_layers/fixed_linear_layer/rtl/fixed_linear_with_input_circular.sv",
-#         "memory/rtl/fifo_for_autogen.sv",
-#         "memory/rtl/unpacked_fifo.sv",
-#         "memory/rtl/skid_buffer.sv",
-#         "memory/rtl/unpacked_skid_buffer.sv",
-#         "memory/rtl/simple_dual_port_ram.sv",
-#         "memory/rtl/fifo.sv",
-#     ],
-# }
-# unpacked_mx_split2_with_data = [
-#     "linear_layers/mxint_operators/rtl/unpacked_mx_split2_with_data.sv",
-#     "common/rtl/split2_with_data.sv",
-#     "common/rtl/split2.sv",
-#     "memory/rtl/fifo.sv",
-# ]
-# mxint_cast = [
-#     "linear_layers/mxint_operators/rtl/or_tree_layer.sv",
-#     "linear_layers/mxint_operators/rtl/or_tree.sv",
-#     "linear_layers/mxint_operators/rtl/log2_max_abs.sv",
-#     "linear_layers/mxint_operators/rtl/mxint_cast.sv",
-#     "linear_layers/mxint_operators/rtl/optimized_right_shift.sv"
-# ]
-# mxint_linear = linear["dependence_files"] + unpacked_mx_split2_with_data + mxint_cast + [
-#         "linear_layers/mxint_operators/rtl/mxint_linear.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_register_slice.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_skid_buffer.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_straightm_fifoe.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_accumulator.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_circular.sv",
-#         "linear_layers/mxint_operators/rtl/mxint_dot_product.sv",
-#         "linear_layers/mxint_operators/rtl/unpacked_mx_fifo.sv",
-#         "common/rtl/join_n.sv",
-#     ]
-
 
 INTERNAL_COMP: Dict[str, Dict[supported_hw_quantisations, IpDescType]] = {
     "linear": {
