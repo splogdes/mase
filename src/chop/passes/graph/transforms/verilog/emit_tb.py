@@ -152,7 +152,7 @@ def _emit_cocotb_tb(graph):
                         getattr(dut, f"m_{result}"),
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
-                        off_by_value=3,
+                        off_by_value=0,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
