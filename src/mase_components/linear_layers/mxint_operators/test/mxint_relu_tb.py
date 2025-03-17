@@ -130,6 +130,7 @@ async def cocotb_test(dut):
     tb = MXIntReluTB(dut)
     await tb.run_test(us=100)
 
+
 def get_relu_config(seed, kwargs={}):
     MAX_IN_FEATURES = 16
     MAX_BATCH_SIZE = 8
@@ -145,6 +146,7 @@ def get_relu_config(seed, kwargs={}):
 
     mantissa = random.randint(3, MAX_MANTISSA)
     exp = random.randint(3, min(mantissa, MAX_EXPONENT))
+
 
 def get_relu_config(seed, kwargs={}):
     MAX_IN_FEATURES = 16
@@ -173,6 +175,7 @@ def get_relu_config(seed, kwargs={}):
 
     config.update(kwargs)
     return config
+
 
 @pytest.mark.dev
 def test_relu():
