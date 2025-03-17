@@ -121,10 +121,21 @@ def test_emit_verilog_linear(seed: int):
     mg, _ = passes.emit_bram_transform_pass(mg)
     mg, _ = passes.emit_internal_rtl_transform_pass(mg)
     mg, _ = passes.emit_cocotb_transform_pass(
-        mg, pass_args={"wait_time": 100, "wait_unit": "ms", "num_batches": random.randint(1,100)}
+        mg,
+        pass_args={
+            "wait_time": 100,
+            "wait_unit": "ms",
+            "num_batches": random.randint(1, 100),
+        },
     )
 
-    simulate(skip_build=False, skip_test=False, simulator="verilator", waves=True, trace_depth=5)
+    simulate(
+        skip_build=False,
+        skip_test=False,
+        simulator="verilator",
+        waves=True,
+        trace_depth=5,
+    )
 
 
 if __name__ == "__main__":
