@@ -122,7 +122,7 @@ class LinearTB(Testbench):
         return tensor_inputs
 
     def generate_inputs(self):
-        return torch.zeros(
+        return torch.randn(
             (
                 self.get_parameter("DATA_IN_0_TENSOR_SIZE_DIM_1"),
                 self.get_parameter("DATA_IN_0_TENSOR_SIZE_DIM_0"),
