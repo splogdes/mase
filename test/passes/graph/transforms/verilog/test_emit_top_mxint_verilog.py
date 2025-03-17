@@ -107,7 +107,7 @@ def test_emit_verilog_linear():
                 args["weight"]["parallelism_1"] = block_size
                 args["bias"]["parallelism_0"] = block_size
                 args["bias"]["parallelism_1"] = 1
-                
+
                 results = node_meta["results"]
                 results["data_out_0"]["parallelism_0"] = block_size
                 results["data_out_0"]["parallelism_1"] = block_parallelism
