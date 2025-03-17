@@ -369,7 +369,7 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                     value = (value & mask) - (value & ~mask)
                     hex_str = format(value, "0{}X".format(data_width // 4))
                     line_values.append(hex_str)
-                block_buff += "".join(line_values[::-1]) + "\n"
+                block_buff += "".join(line_values) + "\n"
 
                 hex_str = format(int(e), "0{}X".format(exponent_width // 4))
                 exp_buff += hex_str + "\n"
