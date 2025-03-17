@@ -117,9 +117,6 @@ def _single_test(
             # Do not use params in hierarchical verilation
             parameters=module_params if not hierarchical else {},
             build_dir=test_work_dir,
-            **(
-                {} if cocotb.__version__ == "1.8.0" else {"waves": trace}
-            ),  # hack to get the regression to pass
         )
     try:
         runner.test(
@@ -129,9 +126,6 @@ def _single_test(
             seed=seed,
             results_xml="results.xml",
             build_dir=test_work_dir,
-            **(
-                {} if cocotb.__version__ == "1.8.0" else {"waves": trace}
-            ),  # hack to get the regression to pass
         )
         num_tests, fail = get_results(test_work_dir.joinpath("results.xml"))
     except Exception as e:
@@ -323,9 +317,6 @@ def simulate_pass(
         ],
         parameters=module_params,
         build_dir=sim_dir,
-        **(
-            {} if cocotb.__version__ == "1.8.0" else {"waves": trace}
-        ),  # hack to get the regression to pass
     )
     runner.test(
         hdl_toplevel="top",
