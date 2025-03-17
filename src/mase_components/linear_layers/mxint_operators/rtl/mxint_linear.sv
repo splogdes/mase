@@ -267,9 +267,9 @@ module mxint_linear #(
     assign acc_valid = add_bias ? circular_bias_valid : acc_data_in_valid;
     assign acc_edata = add_bias ? circular_ebias - BIAS_EXP_BIAS + FDP_EXP_BIAS : acc_edata_in;
 
-    always_comb begin
-      for (int i = 0; i < DATA_IN_0_PARALLELISM_DIM_1 * WEIGHT_PARALLELISM_DIM_1; i++) begin
-        acc_mdata[i] = add_bias ? {circular_mbias[i], {(FDP_WIDTH - BIAS_PRECISION_0){1'b0}}} : acc_mdata_in[i];
+    for (genvar j = 0; j < DATA_IN_0_PARALLELISM_DIM_1; j++) begin
+      for (genvar i = 0; i < BIAS_PARALLELISM_DIM_0; i++) begin
+        assign acc_mdata[j*DATA_IN_0_PARALLELISM_DIM_0+i] = add_bias ? {circular_mbias[i], {(FDP_WIDTH - BIAS_PRECISION_0){1'b0}}} : acc_mdata_in[j*DATA_IN_0_PARALLELISM_DIM_0+i];
       end
     end
 
