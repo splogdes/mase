@@ -113,7 +113,7 @@ def test_emit_verilog_linear():
                 results["data_out_0"]["parallelism_1"] = block_parallelism
 
     mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
-    mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
+    # mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
 
     mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
     mg, _ = passes.report_node_hardware_type_analysis_pass(mg)  # pretty print
