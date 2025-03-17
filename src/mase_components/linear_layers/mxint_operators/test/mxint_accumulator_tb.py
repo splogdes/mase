@@ -4,6 +4,7 @@
 import os
 import logging
 import sys
+import pytest
 
 import cocotb
 from cocotb.log import SimLog
