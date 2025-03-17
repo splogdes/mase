@@ -38,15 +38,23 @@ import inspect
 class MxIntStreamMonitor(MultiSignalStreamMonitor):
     def __init__(self, clk, e_data, m_data, valid, ready, off_by_value=0):
         self.off_by = off_by_value
-        super().__init__(clk, (m_data, e_data), valid, ready, check=True, signed=True, off_by_one=False)
+        super().__init__(
+            clk,
+            (m_data, e_data),
+            valid,
+            ready,
+            check=True,
+            signed=True,
+            off_by_one=False,
+        )
 
     def _check(self, got, exp):
         got_m, got_e = got
         exp_m, exp_e = exp
-        
+
         def check_equality(got, exp):
             if not np.equal(got, exp).all():
-                diff = np.subtract(got,exp)
+                diff = np.subtract(got, exp)
                 if np.isclose(got, exp, atol=self.off_by).all():
                     self.log.warning(
                         f"Off-by-{max(abs(diff))} error: {diff=}\nGot {got}\nExpected {exp}"
@@ -55,14 +63,15 @@ class MxIntStreamMonitor(MultiSignalStreamMonitor):
                     raise TestFailure(
                         "\nGot \n%s, \nExpected \n%s,\nDiff \n%s" % (got, exp, diff)
                     )
+
         # breakpoint()
         if exp_e == got_e:
             check_equality(got_m, exp_m)
         elif abs(diff := (exp_e - got_e)) == 1:
             # normalisation related error
-            # in the case where a single off by 1 error causes the dut to normalise 
-            # and get a different output exponent 
-            adj_m = np.array(got_m) * 2**(-diff)
+            # in the case where a single off by 1 error causes the dut to normalise
+            # and get a different output exponent
+            adj_m = np.array(got_m) * 2 ** (-diff)
             self.log.warning(f"Normalisation Error {exp_e=} {got_e=}")
             check_equality(adj_m, exp_m)
 
@@ -171,7 +180,9 @@ def _emit_cocotb_tb(graph):
                     # Batch dimension always set to 1 in metadata
                     if "data_in" not in arg:
                         continue
-                    print(f"Generating data for node {node}, arg {arg}: {arg_info} {arg_info['shape']}")
+                    print(
+                        f"Generating data for node {node}, arg {arg}: {arg_info} {arg_info['shape']}"
+                    )
                     inputs[f"{arg}"] = torch.randn(([num_batches] + arg_info["shape"]))
             return inputs
 

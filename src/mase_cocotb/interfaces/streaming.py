@@ -307,7 +307,7 @@ class MultiSignalStreamMonitor(Monitor):
         if self.check:
             for g, e in zip(got, exp):
                 if not np.equal(g, e).all():
-                    diff = np.subtract(g,e)
+                    diff = np.subtract(g, e)
                     if self.off_by_one and np.isclose(g, e, atol=1).all():
                         self.log.warning(
                             f"Off-by-one error: {diff=}\nGot {got}\nExpected {exp}"
