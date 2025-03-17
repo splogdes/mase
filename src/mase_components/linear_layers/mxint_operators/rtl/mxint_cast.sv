@@ -164,7 +164,7 @@ module mxint_cast #(
     max_value = (1 << (OUT_MAN_WIDTH - shift_value - 1));
 
     if (max_value == 0)
-      max_value = 2 ** (IN_MAN_WIDTH) - 1;
+      max_value = 2 ** (IN_MAN_WIDTH - 1);
 
   end
 
@@ -193,10 +193,10 @@ module mxint_cast #(
         else
           mdata_out[i] = 0;
         
-      else if ((mbuffer_data_for_out[i] > 0) && (mbuffer_data_for_out[i] > max_value))
+      else if ((mbuffer_data_for_out[i] > 0) && (mbuffer_data_for_out[i] >= max_value))
         mdata_out[i] = MAX_DATA_OUT;
 
-      else if ((mbuffer_data_for_out[i] < 0) && (twos_complement(mbuffer_data_for_out[i]) > max_value))
+      else if ((mbuffer_data_for_out[i] < 0) && (twos_complement(mbuffer_data_for_out[i]) >= max_value))
         mdata_out[i] = MIN_DATA_OUT;
 
       else if (shift_value >= 0)
