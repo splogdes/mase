@@ -93,14 +93,16 @@ def test_emit_verilog_linear():
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
 
+
     block_parallelism = 1
 
     # hack to pass the correct parallelism parameters around
     for node in mg.fx_graph.nodes:
         node_meta = node.meta["mase"].parameters["common"]
+        args = node_meta["args"]
+        results = node_meta["results"]
         match node_meta["mase_op"]:
             case "linear":
-                args = node_meta["args"]
                 args["data_in_0"]["parallelism_0"] = block_size
                 args["data_in_0"]["parallelism_1"] = block_parallelism
                 args["weight"]["parallelism_0"] = block_size
@@ -108,12 +110,16 @@ def test_emit_verilog_linear():
                 args["bias"]["parallelism_0"] = block_size
                 args["bias"]["parallelism_1"] = 1
 
-                results = node_meta["results"]
+                results["data_out_0"]["parallelism_0"] = block_size
+                results["data_out_0"]["parallelism_1"] = block_parallelism
+            case 'relu':
+                args["data_in_0"]["parallelism_0"] = block_size
+                args["data_in_0"]["parallelism_1"] = block_parallelism
                 results["data_out_0"]["parallelism_0"] = block_size
                 results["data_out_0"]["parallelism_1"] = block_parallelism
 
-    mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
-    mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
+    # mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
+    # mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
 
     mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
     mg, _ = passes.report_node_hardware_type_analysis_pass(mg)  # pretty print

@@ -135,8 +135,10 @@ module mxint_cast #(
 
 
   always_comb begin
+    
+    if (log2_max_value == 0) edata_out = 0;
 
-    if (edata_out_full >= (1 << OUT_EXP_WIDTH)) edata_out = (1 << OUT_EXP_WIDTH) - 1;
+    else if (edata_out_full >= (1 << OUT_EXP_WIDTH)) edata_out = (1 << OUT_EXP_WIDTH) - 1;
 
     else if (edata_out_full < 0) edata_out = 0;
 
