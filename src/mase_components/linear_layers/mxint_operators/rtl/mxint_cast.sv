@@ -36,12 +36,12 @@ module mxint_cast #(
   initial begin
     assert (IN_EXP_WIDTH > 2)
     else $fatal("IN_EXP_WIDTH must be greater than 2");
-    assert (IN_MAN_WIDTH > 2)
-    else $fatal("IN_EXP_WIDTH must be greater than 2");
-    assert (OUT_MAN_WIDTH > 2)
+    assert (IN_MAN_WIDTH > 3)
     else $fatal("IN_EXP_WIDTH must be greater than 2");
     assert (OUT_EXP_WIDTH > 2)
     else $fatal("OUT_EXP_WIDTH must be greater than 2");
+    assert (OUT_MAN_WIDTH > 3)
+    else $fatal("IN_EXP_WIDTH must be greater than 2");
   end
 
   // =============================
