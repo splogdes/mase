@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # This example converts a simple MLP model to Verilog
+import random
 import os, sys, logging, traceback, pdb
 from chop.passes.graph.analysis.report.report_node import report_node_type_analysis_pass
 import pytest
@@ -29,8 +30,8 @@ def excepthook(exc_type, exc_value, exc_traceback):
 logger = get_logger(__name__)
 sys.excepthook = excepthook
 
-IN_FEATURES = 12
-OUT_FEATURES = 12
+IN_FEATURES = 16
+OUT_FEATURES = 8
 
 
 # --------------------------------------------------
@@ -53,7 +54,10 @@ class MLP(torch.nn.Module):
 
 
 @pytest.mark.dev
-def test_emit_verilog_linear():
+def test_emit_verilog_linear(seed: int):
+    torch.manual_seed(seed)
+    random.seed(seed)
+
     mlp = MLP()
     mg = chop.MaseGraph(model=mlp)
 
@@ -93,8 +97,6 @@ def test_emit_verilog_linear():
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
 
-    block_parallelism = 1
-
     # hack to pass the correct parallelism parameters around
     for node in mg.fx_graph.nodes:
         node_meta = node.meta["mase"].parameters["common"]
@@ -102,7 +104,7 @@ def test_emit_verilog_linear():
             case "linear":
                 args = node_meta["args"]
                 args["data_in_0"]["parallelism_0"] = block_size
-                args["data_in_0"]["parallelism_1"] = block_parallelism
+                args["data_in_0"]["parallelism_1"] = batch_size
                 args["weight"]["parallelism_0"] = block_size
                 args["weight"]["parallelism_1"] = block_size
                 args["bias"]["parallelism_0"] = block_size
@@ -110,9 +112,9 @@ def test_emit_verilog_linear():
 
                 results = node_meta["results"]
                 results["data_out_0"]["parallelism_0"] = block_size
-                results["data_out_0"]["parallelism_1"] = block_parallelism
+                results["data_out_0"]["parallelism_1"] = batch_size
 
-    mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
+    # mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
     # mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
 
     mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
@@ -122,7 +124,7 @@ def test_emit_verilog_linear():
     mg, _ = passes.emit_bram_transform_pass(mg)
     mg, _ = passes.emit_internal_rtl_transform_pass(mg)
     mg, _ = passes.emit_cocotb_transform_pass(
-        mg, pass_args={"wait_time": 100, "wait_unit": "ms", "batch_size": batch_size}
+        mg, pass_args={"wait_time": 100, "wait_unit": "ms", "num_batches": random.randint(1,100)}
     )
     # mg, _ = passes.emit_vivado_project_transform_pass(mg)
 
@@ -130,4 +132,9 @@ def test_emit_verilog_linear():
 
 
 if __name__ == "__main__":
-    test_emit_verilog_linear()
+    seed = os.getenv("COCOTB_SEED")
+    if seed is None:
+        seed = random.randrange(sys.maxsize)
+    logger.info(f"{seed=}")
+    test_emit_verilog_linear(int(seed))
+    logger.info(f"{seed=}")

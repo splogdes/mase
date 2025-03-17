@@ -43,8 +43,8 @@ def _emit_cocotb_test(graph, pass_args={}):
 
     wait_time = pass_args.get("wait_time", 100)
     wait_unit = pass_args.get("wait_units", "ms")
-    batch_size = pass_args.get("batch_size", 1)
-
+    num_batches = pass_args.get("num_batches", 1)
+    print(pass_args)
     test_template = f"""
 import cocotb
 
@@ -60,7 +60,7 @@ async def test(dut):
 
     await tb.initialize()
 
-    in_tensors = tb.generate_inputs(batches={batch_size})
+    in_tensors = tb.generate_inputs(num_batches={num_batches})
     exp_out = tb.model(*list(in_tensors.values()))
 
     tb.load_drivers(in_tensors)
@@ -120,13 +120,13 @@ def _emit_cocotb_tb(graph):
                 "precision"
             ]
 
-        def generate_inputs(self, batches):
+        def generate_inputs(self, num_batches):
             """
             Generate inputs for the model by sampling a random tensor
             for each input argument, according to its shape
 
-            :param batches: number of batches to generate for each argument
-            :type batches: int
+            :param num_batches: number of batches to generate for each argument
+            :type num_batches: int
             :return: a dictionary of input arguments and their corresponding tensors
             :rtype: Dict
             """
@@ -137,8 +137,8 @@ def _emit_cocotb_tb(graph):
                     # Batch dimension always set to 1 in metadata
                     if "data_in" not in arg:
                         continue
-                    # print(f"Generating data for node {node}, arg {arg}: {arg_info}")
-                    inputs[f"{arg}"] = torch.randn(([batches] + arg_info["shape"][1:]))
+                    print(f"Generating data for node {node}, arg {arg}: {arg_info} {arg_info['shape']}")
+                    inputs[f"{arg}"] = torch.randn(([num_batches] + arg_info["shape"]))
             return inputs
 
         def load_drivers(self, in_tensors):
