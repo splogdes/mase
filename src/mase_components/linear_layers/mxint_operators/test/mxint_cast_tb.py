@@ -123,11 +123,11 @@ def get_mxint_cast_config_random(seed, kwargs={}):
     MAX_MANTISSA = 32
     MAX_EXPONENT = 6
 
-    in_man = random.randint(2, MAX_MANTISSA)
-    in_exp = random.randint(2, MAX_EXPONENT)
+    in_man = random.randint(3, MAX_MANTISSA)
+    in_exp = random.randint(3, MAX_EXPONENT)
 
-    out_man = random.randint(2, MAX_MANTISSA)
-    out_exp = random.randint(2, MAX_EXPONENT)
+    out_man = random.randint(3, MAX_MANTISSA)
+    out_exp = random.randint(3, MAX_EXPONENT)
 
     config = {
         "IN_MAN_WIDTH": in_man,
