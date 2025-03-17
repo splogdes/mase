@@ -23,6 +23,13 @@ test-hw:
 	python3	src/mase_components/linear_layers/fixed_linear_layer/test/fixed_linear_tb.py
 	# MxInt
 	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_linear_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_accumulator_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_matmul_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_matrix_cat_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_relu_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_dot_product_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_cast_tb.py
+	python3 src/mase_components/linear_layers/mxint_operators/test/mxint_vector_mult_tb.py
 	# Memory
 	python3 src/mase_components/memory/test/fifo_tb.py
 
