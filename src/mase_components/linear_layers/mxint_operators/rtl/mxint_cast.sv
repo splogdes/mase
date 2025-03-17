@@ -133,10 +133,11 @@ module mxint_cast #(
 
   assign edata_out_full = log2_max_value - IN_MAN_WIDTH + 2 + ebuffer_data_for_out - EBIAS_IN + EBIAS_OUT;
 
-
   always_comb begin
 
-    if (edata_out_full >= (1 << OUT_EXP_WIDTH)) edata_out = (1 << OUT_EXP_WIDTH) - 1;
+    if (log2_max_value == 0) edata_out = 0;
+
+    else if (edata_out_full >= (1 << OUT_EXP_WIDTH)) edata_out = (1 << OUT_EXP_WIDTH) - 1;
 
     else if (edata_out_full < 0) edata_out = 0;
 
@@ -148,14 +149,24 @@ module mxint_cast #(
   // Compute Shift Value
   // =============================
 
-  localparam SHIFT_WIDTH = max(LOSSLESSS_EDATA_WIDTH, IN_MAN_WIDTH, OUT_MAN_WIDTH) + 1;
+  localparam SHIFT_WIDTH = max(LOSSLESSS_EDATA_WIDTH, OUT_MAN_WIDTH, 0);
   logic signed [SHIFT_WIDTH - 1:0] shift_value;
+  logic [IN_MAN_WIDTH - 1:0] max_value;
 
-  assign shift_value = $signed(
-      edata_out_full - edata_out
-  ) + $signed(
-      OUT_MAN_WIDTH - log2_max_value - 2
-  );
+  always_comb begin
+
+    shift_value = $signed(
+          edata_out_full - edata_out
+      ) + $signed(
+          OUT_MAN_WIDTH - log2_max_value - 2
+      );
+
+    max_value = (1 << (OUT_MAN_WIDTH - shift_value - 1));
+
+    if (max_value == 0)
+      max_value = 2 ** (IN_MAN_WIDTH) - 1;
+
+  end
 
   // =============================
   // Compute Output Mantissa
@@ -165,29 +176,51 @@ module mxint_cast #(
 
     always_comb begin
 
-      if (mbuffer_data_for_out[i] == 0) mdata_out[i] = 0;
+      if (mbuffer_data_for_out[i] == 0)
+        mdata_out[i] = 0;
 
-      else if (shift_value > OUT_MAN_WIDTH)
-        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = MIN_DATA_OUT;
-        else mdata_out[i] = MAX_DATA_OUT;
+      else if ((shift_value > 0) && (shift_value >= OUT_MAN_WIDTH))
+        if (mbuffer_data_for_out[i] < 0)
+          mdata_out[i] = MIN_DATA_OUT;
+        else
+          mdata_out[i] = MAX_DATA_OUT;
 
-      else if (shift_value < -IN_MAN_WIDTH)
-        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = -1;
-        else mdata_out[i] = 0;
-
-      else if (mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      // This is really stupid, but system verilog has poor support for signed arithmetic of large numbers
+      // So -shift_value != twos_complement(shift_value) hence:
+      else if ((shift_value < 0) && (twos_complement(shift_value) >= IN_MAN_WIDTH))
+        if (mbuffer_data_for_out[i] < 0)
+          mdata_out[i] = -1;
+        else
+          mdata_out[i] = 0;
+        
+      else if ((mbuffer_data_for_out[i] > 0) && (mbuffer_data_for_out[i] > max_value))
         mdata_out[i] = MAX_DATA_OUT;
 
-      else if (-mbuffer_data_for_out[i] >= (1 << (OUT_MAN_WIDTH - shift_value - 1)))
+      else if ((mbuffer_data_for_out[i] < 0) && (twos_complement(mbuffer_data_for_out[i]) > max_value))
         mdata_out[i] = MIN_DATA_OUT;
 
-      else if (shift_value >= 0) mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
+      else if (shift_value >= 0)
+        mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
 
-      else mdata_out[i] = mbuffer_data_for_out[i] >>> -shift_value;
+      else
+        mdata_out[i] = mbuffer_data_for_out[i] >>> twos_complement(shift_value);
 
     end
 
   end
+
+  // =============================
+  // two's complement
+  // =============================
+
+  localparam TWOS_COMPLEMENT_WIDTH = max(IN_MAN_WIDTH, SHIFT_WIDTH, 0);
+
+  function [TWOS_COMPLEMENT_WIDTH - 1:0] twos_complement;
+    input [TWOS_COMPLEMENT_WIDTH - 1:0] x;
+    begin
+      twos_complement = ~x + 1;
+    end
+  endfunction
 
 endmodule
 
@@ -201,3 +234,4 @@ function [31:0] max;
     max = (x > y && x > z) ? x : (y > z) ? y : z;
   end
 endfunction
+

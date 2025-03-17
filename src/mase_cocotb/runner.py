@@ -45,8 +45,8 @@ def _verilator_args(hierarchical, trace):
         "--stats",
         # Hierarchical
         *(["--hierarchical"] if hierarchical else []),
-        # Signal trace in dump.fst
-        *(["--trace-fst", "--trace-structs"] if trace else []),
+        # Signal trace in dump.vcd
+        *(["--trace", "--trace-structs"] if trace else []),
         "-O2",
         "-build-jobs",
         "8",
@@ -117,6 +117,7 @@ def _single_test(
             # Do not use params in hierarchical verilation
             parameters=module_params if not hierarchical else {},
             build_dir=test_work_dir,
+            waves=trace,
         )
     try:
         runner.test(
@@ -126,6 +127,7 @@ def _single_test(
             seed=seed,
             results_xml="results.xml",
             build_dir=test_work_dir,
+            waves=trace,
         )
         num_tests, fail = get_results(test_work_dir.joinpath("results.xml"))
     except Exception as e:
@@ -317,6 +319,7 @@ def simulate_pass(
         ],
         parameters=module_params,
         build_dir=sim_dir,
+        waves=trace,
     )
     runner.test(
         hdl_toplevel="top",
