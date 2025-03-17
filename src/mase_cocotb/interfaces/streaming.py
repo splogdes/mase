@@ -306,21 +306,17 @@ class MultiSignalStreamMonitor(Monitor):
     def _check(self, got, exp):
         if self.check:
             for g, e in zip(got, exp):
-                if self.off_by_one:
-                    if not np.equal(g, e).all():
-                        diff = abs(np.subtract(g,e))
-                        if np.isclose(g, e, atol=1).all():
-                            self.log.warning(
-                                f"Off-by-one error: {diff=}\nGot {got} Expected {exp}"
-                            )
-                        elif np.isclose(g, e, atol=2).all():
-                            self.log.warning(
-                                f"Off-by-two error: {diff=}\nGot {got} Expected {exp}"
-                            )
-                        else:
-                            raise TestFailure(
-                                "\nGot \n%s, \nExpected \n%s" % (got, exp)
-                            )
-                else:
-                    if not np.equal(g, e).all():
-                        raise TestFailure("\nGot \n%s, \nExpected \n%s" % (got, exp))
+                if not np.equal(g, e).all():
+                    diff = np.subtract(g,e)
+                    if self.off_by_one and np.isclose(g, e, atol=1).all():
+                        self.log.warning(
+                            f"Off-by-one error: {diff=}\nGot {got} Expected {exp}"
+                        )
+                    elif self.off_by_one and np.isclose(g, e, atol=2).all():
+                        self.log.warning(
+                            f"Off-by-two error: {diff=}\nGot {got} Expected {exp}"
+                        )
+                    else:
+                        raise TestFailure(
+                            "\nGot \n%s, \nExpected \n%sDiff \n%s" % (got, exp, diff)
+                        )
