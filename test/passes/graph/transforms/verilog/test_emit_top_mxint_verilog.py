@@ -48,7 +48,7 @@ class MLP(torch.nn.Module):
         self.fc1 = nn.Linear(IN_FEATURES, OUT_FEATURES)
 
     def forward(self, x):
-        x = self.fc1(x)
+        x = torch.relu(self.fc1(x))
         return x
 
 
