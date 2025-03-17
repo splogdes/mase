@@ -30,6 +30,7 @@ def excepthook(exc_type, exc_value, exc_traceback):
 logger = get_logger(__name__)
 sys.excepthook = excepthook
 
+
 # --------------------------------------------------
 #   Model specifications
 #   prefer small models for fast test
@@ -54,14 +55,15 @@ def test_emit_verilog_linear(seed: int):
     torch.manual_seed(seed)
     random.seed(seed)
 
-    block_size = 4 # block dim 0
-    batch_size = 6 # block dim 1
+    block_size = 4  # block dim 0
+    batch_size = 6  # block dim 1
 
-    IN_FEATURES = 16
-    OUT_FEATURES = 8
-    m_width = 8
-    e_width = 6
+    IN_FEATURES = block_size * random.randint(1, 10)
+    OUT_FEATURES = block_size * random.randint(1, 10)
+    m_width = random.randint(3, 10)
+    e_width = random.randint(3, 10)
 
+    num_batches = random.randint(1, 100)
 
     mlp = MLP(IN_FEATURES, OUT_FEATURES)
     mg = chop.MaseGraph(model=mlp)
@@ -126,7 +128,7 @@ def test_emit_verilog_linear(seed: int):
         pass_args={
             "wait_time": 100,
             "wait_unit": "ms",
-            "num_batches": random.randint(1, 100),
+            "num_batches": num_batches,
         },
     )
 
