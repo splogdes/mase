@@ -138,7 +138,7 @@ def _emit_cocotb_tb(graph):
                     if "data_in" not in arg:
                         continue
                     # print(f"Generating data for node {node}, arg {arg}: {arg_info}")
-                    inputs[f"{arg}"] = torch.rand(([batches] + arg_info["shape"][1:]))
+                    inputs[f"{arg}"] = torch.randn(([batches] + arg_info["shape"][1:]))
             return inputs
 
         def load_drivers(self, in_tensors):
@@ -189,11 +189,10 @@ def _emit_cocotb_tb(graph):
                 mtensor, etensor, parallelism
             )
 
-            # # convert the exponents from the biased form to signed
-            # bias = 2 ** (config["exponent_width"] - 1) - 1
-            # for i, (tensor, exp) in enumerate(tensor_output):
-            #     new_exp = exp - bias
-            #     tensor_output[i] = (tensor, new_exp)
+            # convert the exponents from the biased form to signed
+            max_val = 2 ** config["width"]
+            for i, (tensor, exp) in enumerate(tensor_output):
+                tensor_output[i] = (torch.tensor(tensor).remainder(max_val), exp)
 
             self.output_monitors["data_out_0"].load_monitor(tensor_output)
 
