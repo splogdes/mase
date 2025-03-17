@@ -30,10 +30,6 @@ def excepthook(exc_type, exc_value, exc_traceback):
 logger = get_logger(__name__)
 sys.excepthook = excepthook
 
-IN_FEATURES = 16
-OUT_FEATURES = 8
-
-
 # --------------------------------------------------
 #   Model specifications
 #   prefer small models for fast test
@@ -43,10 +39,10 @@ class MLP(torch.nn.Module):
     Toy FC model for digit recognition on MNIST
     """
 
-    def __init__(self) -> None:
+    def __init__(self, in_features, out_features) -> None:
         super().__init__()
 
-        self.fc1 = nn.Linear(IN_FEATURES, OUT_FEATURES)
+        self.fc1 = nn.Linear(in_features, out_features)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -58,20 +54,25 @@ def test_emit_verilog_linear(seed: int):
     torch.manual_seed(seed)
     random.seed(seed)
 
-    mlp = MLP()
+    block_size = 4 # block dim 0
+    batch_size = 6 # block dim 1
+
+    IN_FEATURES = 16
+    OUT_FEATURES = 8
+    m_width = 8
+    e_width = 6
+
+
+    mlp = MLP(IN_FEATURES, OUT_FEATURES)
     mg = chop.MaseGraph(model=mlp)
 
     # Provide a dummy input for the graph so it can use for tracing
-    batch_size = 6
     x = torch.randn((batch_size, IN_FEATURES))
     dummy_in = {"x": x}
 
     mg, _ = passes.init_metadata_analysis_pass(mg, None)
     mg, _ = passes.add_common_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
 
-    block_size = 4
-    m_width = 8
-    e_width = 6
     # Quantize to int
     quan_args = {
         "by": "type",
@@ -81,11 +82,11 @@ def test_emit_verilog_linear(seed: int):
                 # data
                 "data_in_width": m_width,
                 "data_in_exponent_width": e_width,
-                "data_in_block_size": [1, block_size],
+                "data_in_block_size": [batch_size, block_size],
                 # weight
                 "weight_width": m_width,
                 "weight_exponent_width": e_width,
-                "weight_block_size": [1, block_size],
+                "weight_block_size": [block_size, block_size],
                 # bias
                 "bias_width": m_width,
                 "bias_exponent_width": e_width,
