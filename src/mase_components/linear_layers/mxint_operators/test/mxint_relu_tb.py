@@ -43,7 +43,7 @@ class MXIntReluTB(Testbench):
             dut.data_out_0_valid,
             dut.data_out_0_ready,
             check=True,
-            signed=False
+            signed=False,
         )
 
         # Model
@@ -146,15 +146,29 @@ def get_relu_config(seed, kwargs={}):
     mantissa = random.randint(3, MAX_MANTISSA)
     exp = random.randint(3, min(mantissa, MAX_EXPONENT))
 
+def get_relu_config(seed, kwargs={}):
+    MAX_IN_FEATURES = 16
+    MAX_BATCH_SIZE = 8
+    random.seed(seed)
+
+    BLOCK_SIZE = random.randint(2, 8)
+    PARALLELISM = random.randint(1, 8)
+    BATCH_SIZE = random.randint(1, MAX_BATCH_SIZE // PARALLELISM) * PARALLELISM
+    IN_FEATURES = random.randint(2, MAX_IN_FEATURES // BLOCK_SIZE) * BLOCK_SIZE
+
+    MAX_MANTISSA = 16
+    MAX_EXPONENT = 6
+
+    mantissa = random.randint(3, MAX_MANTISSA)
+    exp = random.randint(3, min(mantissa, MAX_EXPONENT))
+
     config = {
-        "DATA_IN_0_PRECISION_0" : mantissa,
-        "DATA_IN_0_PRECISION_1" : exp,
-
-        "DATA_IN_0_TENSOR_SIZE_DIM_0" : IN_FEATURES,
-        "DATA_IN_0_TENSOR_SIZE_DIM_1" : BATCH_SIZE,
-
-        "DATA_IN_0_PARALLELISM_DIM_0" : BLOCK_SIZE,
-        "DATA_IN_0_PARALLELISM_DIM_1" : PARALLELISM,
+        "DATA_IN_0_PRECISION_0": mantissa,
+        "DATA_IN_0_PRECISION_1": exp,
+        "DATA_IN_0_TENSOR_SIZE_DIM_0": IN_FEATURES,
+        "DATA_IN_0_TENSOR_SIZE_DIM_1": BATCH_SIZE,
+        "DATA_IN_0_PARALLELISM_DIM_0": BLOCK_SIZE,
+        "DATA_IN_0_PARALLELISM_DIM_1": PARALLELISM,
     }
 
     config.update(kwargs)
@@ -168,9 +182,7 @@ def test_relu():
     torch.manual_seed(10)
     seed = os.getenv("COCOTB_SEED")
 
-    param_override = {
-
-    }
+    param_override = {}
 
     if seed is not None:
         seed = int(seed)
@@ -190,7 +202,6 @@ def test_relu():
             jobs=min(num_configs, os.cpu_count() // 2),
         )
         print(f"Test seeds: \n{[(i,base_seed+i) for i in range(num_configs)]}")
-
 
 
 if __name__ == "__main__":
