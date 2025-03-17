@@ -151,12 +151,12 @@ def test_mxint_cast_random():
 
     # use this to fix a particular parameter value
     param_override = {
-            # "IN_MAN_WIDTH": 32,
-            # "IN_EXP_WIDTH": 6,
-            # "OUT_MAN_WIDTH": 6,
-            # "OUT_EXP_WIDTH": 3,
-            # "BLOCK_SIZE": 2,
-        }
+        # "IN_MAN_WIDTH": 32,
+        # "IN_EXP_WIDTH": 6,
+        # "OUT_MAN_WIDTH": 6,
+        # "OUT_EXP_WIDTH": 3,
+        # "BLOCK_SIZE": 2,
+    }
 
     if seed is not None:
         seed = int(seed)

@@ -155,16 +155,11 @@ module mxint_cast #(
 
   always_comb begin
 
-    shift_value = $signed(
-          edata_out_full - edata_out
-      ) + $signed(
-          OUT_MAN_WIDTH - log2_max_value - 2
-      );
+    shift_value = $signed(edata_out_full - edata_out) + $signed(OUT_MAN_WIDTH - log2_max_value - 2);
 
     max_value = (1 << (OUT_MAN_WIDTH - shift_value - 1));
 
-    if (max_value == 0)
-      max_value = 2 ** (IN_MAN_WIDTH - 1);
+    if (max_value == 0) max_value = 2 ** (IN_MAN_WIDTH - 1);
 
   end
 
@@ -176,34 +171,29 @@ module mxint_cast #(
 
     always_comb begin
 
-      if (mbuffer_data_for_out[i] == 0)
-        mdata_out[i] = 0;
+      if (mbuffer_data_for_out[i] == 0) mdata_out[i] = 0;
 
       else if ((shift_value > 0) && (shift_value >= OUT_MAN_WIDTH))
-        if (mbuffer_data_for_out[i] < 0)
-          mdata_out[i] = MIN_DATA_OUT;
-        else
-          mdata_out[i] = MAX_DATA_OUT;
+        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = MIN_DATA_OUT;
+        else mdata_out[i] = MAX_DATA_OUT;
 
       // This is really stupid, but system verilog has poor support for signed arithmetic of large numbers
       // So -shift_value != twos_complement(shift_value) hence:
       else if ((shift_value < 0) && (twos_complement(shift_value) >= IN_MAN_WIDTH))
-        if (mbuffer_data_for_out[i] < 0)
-          mdata_out[i] = -1;
-        else
-          mdata_out[i] = 0;
-        
+        if (mbuffer_data_for_out[i] < 0) mdata_out[i] = -1;
+        else mdata_out[i] = 0;
+
       else if ((mbuffer_data_for_out[i] > 0) && (mbuffer_data_for_out[i] >= max_value))
         mdata_out[i] = MAX_DATA_OUT;
 
-      else if ((mbuffer_data_for_out[i] < 0) && (twos_complement(mbuffer_data_for_out[i]) >= max_value))
+      else if ((mbuffer_data_for_out[i] < 0) && (twos_complement(
+              mbuffer_data_for_out[i]
+          ) >= max_value))
         mdata_out[i] = MIN_DATA_OUT;
 
-      else if (shift_value >= 0)
-        mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
+      else if (shift_value >= 0) mdata_out[i] = mbuffer_data_for_out[i] <<< shift_value;
 
-      else
-        mdata_out[i] = mbuffer_data_for_out[i] >>> twos_complement(shift_value);
+      else mdata_out[i] = mbuffer_data_for_out[i] >>> twos_complement(shift_value);
 
     end
 
