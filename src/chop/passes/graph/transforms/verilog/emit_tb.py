@@ -108,7 +108,7 @@ def _emit_cocotb_tb(graph):
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
                         check=True,
-                        signed=False,
+                        signed=True,
                         off_by_one=True,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
@@ -190,9 +190,11 @@ def _emit_cocotb_tb(graph):
             )
 
             # convert the exponents from the biased form to signed
-            max_val = 2 ** config["width"]
+            exp_max_val = 2 ** config["exponent_width"]
             for i, (tensor, exp) in enumerate(tensor_output):
-                tensor_output[i] = (torch.tensor(tensor).remainder(max_val).tolist(), exp)
+                # sign extend by doing (2e) mod 2^b - (e mod 2^b)
+                exp_signed = (2 * exp) % exp_max_val - (exp % exp_max_val)
+                tensor_output[i] = (tensor, exp_signed)
 
             self.output_monitors["data_out_0"].load_monitor(tensor_output)
 

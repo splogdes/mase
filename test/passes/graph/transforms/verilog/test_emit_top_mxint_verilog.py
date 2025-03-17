@@ -135,6 +135,9 @@ if __name__ == "__main__":
     seed = os.getenv("COCOTB_SEED")
     if seed is None:
         seed = random.randrange(sys.maxsize)
-    logger.info(f"{seed=}")
-    test_emit_verilog_linear(int(seed))
+        logger.info(f"Generated {seed=}")
+    else:
+        seed = int(seed)
+        logger.info(f"Using provided {seed=}")
+    test_emit_verilog_linear(seed)
     logger.info(f"{seed=}")
