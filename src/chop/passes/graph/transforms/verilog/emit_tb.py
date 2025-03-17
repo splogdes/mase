@@ -192,7 +192,7 @@ def _emit_cocotb_tb(graph):
             # convert the exponents from the biased form to signed
             max_val = 2 ** config["width"]
             for i, (tensor, exp) in enumerate(tensor_output):
-                tensor_output[i] = (torch.tensor(tensor).remainder(max_val), exp)
+                tensor_output[i] = (torch.tensor(tensor).remainder(max_val).tolist(), exp)
 
             self.output_monitors["data_out_0"].load_monitor(tensor_output)
 
