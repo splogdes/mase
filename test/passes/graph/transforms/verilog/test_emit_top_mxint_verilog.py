@@ -114,9 +114,6 @@ def test_emit_verilog_linear(seed: int):
                 results["data_out_0"]["parallelism_0"] = block_size
                 results["data_out_0"]["parallelism_1"] = batch_size
 
-    # mg.model.fc1.weight.data = torch.eye(IN_FEATURES) * -2
-    # mg.model.fc1.bias.data = torch.zeros(mg.model.fc1.bias.data.shape)
-
     mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
     mg, _ = passes.report_node_hardware_type_analysis_pass(mg)  # pretty print
 
@@ -126,9 +123,8 @@ def test_emit_verilog_linear(seed: int):
     mg, _ = passes.emit_cocotb_transform_pass(
         mg, pass_args={"wait_time": 100, "wait_unit": "ms", "num_batches": random.randint(1,100)}
     )
-    # mg, _ = passes.emit_vivado_project_transform_pass(mg)
 
-    simulate(skip_build=False, skip_test=False, simulator="verilator", waves=True)
+    simulate(skip_build=False, skip_test=False, simulator="verilator", waves=True, trace_depth=5)
 
 
 if __name__ == "__main__":

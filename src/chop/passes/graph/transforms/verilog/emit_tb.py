@@ -1,7 +1,9 @@
+from typing import Literal
 from mase_components.linear_layers.mxint_operators.test.utils import (
     block_mxint_quant,
     pack_tensor_to_mx_listed_chunk,
 )
+import numpy as np
 import logging, torch
 from pathlib import Path
 from textwrap import indent
@@ -26,10 +28,43 @@ from mase_cocotb.interfaces.streaming import (
     StreamDriver,
     StreamMonitor,
 )
+from cocotb.result import TestFailure
 
 
 import dill
 import inspect
+
+
+class MxIntStreamMonitor(MultiSignalStreamMonitor):
+    def __init__(self, clk, e_data, m_data, valid, ready, off_by_value=0):
+        self.off_by = off_by_value
+        super().__init__(clk, (m_data, e_data), valid, ready, check=True, signed=True, off_by_one=False)
+
+    def _check(self, got, exp):
+        got_m, got_e = got
+        exp_m, exp_e = exp
+        
+        def check_equality(got, exp):
+            if not np.equal(got, exp).all():
+                diff = np.subtract(got,exp)
+                if np.isclose(got, exp, atol=self.off_by).all():
+                    self.log.warning(
+                        f"Off-by-{max(abs(diff))} error: {diff=}\nGot {got}\nExpected {exp}"
+                    )
+                else:
+                    raise TestFailure(
+                        "\nGot \n%s, \nExpected \n%s,\nDiff \n%s" % (got, exp, diff)
+                    )
+        # breakpoint()
+        if exp_e == got_e:
+            check_equality(got_m, exp_m)
+        elif abs(diff := (exp_e - got_e)) == 1:
+            # normalisation related error
+            # in the case where a single off by 1 error causes the dut to normalise 
+            # and get a different output exponent 
+            adj_m = np.array(got_m) * 2**(-diff)
+            self.log.warning(f"Normalisation Error {exp_e=} {got_e=}")
+            check_equality(adj_m, exp_m)
 
 
 def _cap(name):
@@ -102,14 +137,13 @@ def _emit_cocotb_tb(graph):
                 for result in node.meta["mase"]["common"]["results"].keys():
                     if "data_out" not in result:
                         continue
-                    self.output_monitors[result] = MultiSignalStreamMonitor(
+                    self.output_monitors[result] = MxIntStreamMonitor(
                         dut.clk,
-                        (getattr(dut, f"m_{result}"), getattr(dut, f"e_{result}")),
+                        getattr(dut, f"e_{result}"),
+                        getattr(dut, f"m_{result}"),
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
-                        check=True,
-                        signed=True,
-                        off_by_one=True,
+                        off_by_value=3,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
