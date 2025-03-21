@@ -72,7 +72,7 @@ def test_quantize():
         "default": {"config": {"name": None}},
         "linear": {
             "config": {
-                "name": "integer",
+                "name": "fixed",
                 # data
                 "data_in_width": 8,
                 "data_in_frac_width": 4,
