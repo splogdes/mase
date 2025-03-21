@@ -22,7 +22,7 @@ module {node_param_name}_mantissa_rom #(
   logic [DWIDTH-1:0] q0_t1;
 
   initial begin
-    $readmemh("{filename}_block.dat", ram);
+    $readmemb("{filename}_block.dat", ram);
   end
 
   assign q0 = q0_t1;

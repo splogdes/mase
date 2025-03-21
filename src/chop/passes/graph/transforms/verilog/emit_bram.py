@@ -363,15 +363,20 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
             exp_buff = ""
             for ms, e in data_list:
                 line_values = []
+                # binary formatting for the mantissa to more easily handle non-power of 2 mantissa sizes
                 for m in ms:
                     value = int(m)
+                    # two's complement
                     mask = 2 ** (data_width - 1) - 1
                     value = (value & mask) - (value & ~mask)
-                    hex_str = format(value, "0{}X".format(data_width // 4))
-                    line_values.append(hex_str)
+                    # convert to binary string with variable 0 padding
+                    bin_str = f"{value:0{data_width}b}"
+                    line_values.append(bin_str)
+                print(line_values)
                 block_buff += "".join(line_values) + "\n"
 
-                hex_str = format(int(e), "0{}X".format(exponent_width // 4))
+                # convert to padded hex value 
+                hex_str = f"{int(e):0{(exponent_width // 4) + 1}X}"
                 exp_buff += hex_str + "\n"
 
             # block_buff = ""
