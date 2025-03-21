@@ -20,15 +20,7 @@ from chop.tools import get_logger
 
 set_logging_verbosity("debug")
 
-
-def excepthook(exc_type, exc_value, exc_traceback):
-    traceback.print_exception(exc_type, exc_value, exc_traceback)
-    print("\nEntering debugger...")
-    pdb.post_mortem(exc_traceback)
-
-
 logger = get_logger(__name__)
-sys.excepthook = excepthook
 
 
 # --------------------------------------------------
@@ -64,6 +56,7 @@ def test_emit_verilog_linear(seed: int):
     e_width = random.randint(3, 10)
 
     num_batches = random.randint(1, 100)
+    logger.info(f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}")
 
     mlp = MLP(IN_FEATURES, OUT_FEATURES)
     mg = chop.MaseGraph(model=mlp)
@@ -75,7 +68,7 @@ def test_emit_verilog_linear(seed: int):
     mg, _ = passes.init_metadata_analysis_pass(mg, None)
     mg, _ = passes.add_common_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
 
-    # Quantize to int
+    # Quantize to mxint
     quan_args = {
         "by": "type",
         "default": {
