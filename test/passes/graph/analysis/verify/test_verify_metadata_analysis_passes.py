@@ -46,8 +46,8 @@ def test_verify_metadata():
     mg, _ = init_metadata_analysis_pass(mg, None)
     mg, _ = add_common_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
     mg, _ = add_software_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
-    
-        # Quantize to fixed-point
+
+    # Quantize to fixed-point
     config_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         "..",
@@ -65,7 +65,7 @@ def test_verify_metadata():
     with open(config_file, "r") as f:
         quan_args = toml.load(f)["passes"]["quantize"]
     mg, _ = quantize_transform_pass(mg, quan_args)
-    
+
     mg, _ = add_hardware_metadata_analysis_pass(mg, {"dummy_in": dummy_in})
     # all three verify passes are bundled in one
     # mg, _ = verify_metadata_analysis_pass(mg, dummy_in)
