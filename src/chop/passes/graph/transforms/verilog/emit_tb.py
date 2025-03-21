@@ -129,30 +129,59 @@ def _emit_cocotb_tb(graph):
             self.output_monitors = {}
 
             for node in graph.nodes_in:
-                for arg in node.meta["mase"]["common"]["args"].keys():
+                for arg, arg_info in node.meta["mase"]["common"]["args"].items():
                     if "data_in" not in arg:
                         continue
-                    self.input_drivers[arg] = MultiSignalStreamDriver(
-                        dut.clk,
-                        (getattr(dut, f"m_{arg}"), getattr(dut, f"e_{arg}")),
-                        getattr(dut, f"{arg}_valid"),
-                        getattr(dut, f"{arg}_ready"),
-                    )
+                    match arg_info:
+                        case 'mxint':
+                            self.input_drivers[arg] = MultiSignalStreamDriver(
+                                dut.clk,
+                                (getattr(dut, f"m_{arg}"), getattr(dut, f"e_{arg}")),
+                                getattr(dut, f"{arg}_valid"),
+                                getattr(dut, f"{arg}_ready"),
+                            )
+                        case 'fixed':
+                            self.input_drivers[arg] = StreamDriver(
+                                dut.clk,
+                                getattr(dut, arg),
+                                getattr(dut, f"{arg}_valid"),
+                                getattr(dut, f"{arg}_ready"),
+                            )
+                        case t:
+                            raise NotImplementedError(
+                f"Unsupported type format {t} for {node} {arg}"
+            )
                     self.input_drivers[arg].log.setLevel(logging.DEBUG)
 
             # Instantiate as many monitors as required outputs
             for node in graph.nodes_out:
-                for result in node.meta["mase"]["common"]["results"].keys():
+                for result, result_info in node.meta["mase"]["common"]["results"].items():
                     if "data_out" not in result:
                         continue
-                    self.output_monitors[result] = MxIntStreamMonitor(
-                        dut.clk,
-                        getattr(dut, f"e_{result}"),
-                        getattr(dut, f"m_{result}"),
-                        getattr(dut, f"{result}_valid"),
-                        getattr(dut, f"{result}_ready"),
-                        off_by_value=1,
-                    )
+                    match result_info:
+                        case 'mxint':
+                            self.output_monitors[result] = MxIntStreamMonitor(
+                                dut.clk,
+                                getattr(dut, f"e_{result}"),
+                                getattr(dut, f"m_{result}"),
+                                getattr(dut, f"{result}_valid"),
+                                getattr(dut, f"{result}_ready"),
+                                off_by_value=1,
+                            )
+                        case 'fixed':
+                            # beware, this testbench does not check if the output value is correct
+                            self.output_monitors[result] = StreamMonitor(
+                                dut.clk,
+                                getattr(dut, result),
+                                getattr(dut, f"{result}_valid"),
+                                getattr(dut, f"{result}_ready"),
+                                check=False,
+                            )
+                        case t:
+                            raise NotImplementedError(
+                f"Unsupported type format {t} for {node} {result}"
+            )
+
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
             self.model = graph.model
