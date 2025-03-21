@@ -294,8 +294,10 @@ def cp_data_in_entries(
     cp_multi_values(config, p_config, entries["data_in_entries"], strict=strict)
 
 
-def cp_data_out_entries(config: dict, p_config: dict, entries: dict):
-    cp_multi_values(config, p_config, entries["data_out_entries"])
+def cp_data_out_entries(
+    config: dict, p_config: dict, entries: dict, strict: bool = True
+):
+    cp_multi_values(config, p_config, entries["data_out_entries"], strict=strict)
 
 
 def cp_bias_entries(config: dict, p_config: dict, entries: dict, strict: bool = True):
@@ -319,12 +321,6 @@ def cp_weight_entries_to_bias(
 
 def cp_layer_entries(config: dict, p_config: dict, entries: dict, strict: bool = True):
     cp_multi_values(config, p_config, entries["additional_layers_entries"])
-
-
-def cp_data_out_entries(
-    config: dict, p_config: dict, entries: dict, strict: bool = True
-):
-    cp_multi_values(config, p_config, entries["data_out_entries"], strict=strict)
 
 
 """QUANT_ARITH_TO_CP_FN
