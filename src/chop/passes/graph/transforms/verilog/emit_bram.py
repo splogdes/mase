@@ -374,7 +374,7 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                     line_values.append(bin_str)
                 block_buff += "_".join(line_values) + "\n"
 
-                # convert to padded hex value 
+                # convert to padded hex value
                 hex_str = f"{int(e):0{(exponent_width // 4) + 1}X}"
                 exp_buff += hex_str + "\n"
 

@@ -52,7 +52,9 @@ def test_emit_verilog_linear(seed: int):
     e_width = random.randint(3, 10)
 
     num_batches = random.randint(1, 100)
-    logger.info(f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}")
+    logger.info(
+        f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}"
+    )
 
     mlp = MLP(IN_FEATURES, OUT_FEATURES)
     mg = chop.MaseGraph(model=mlp)
@@ -128,8 +130,10 @@ def test_emit_verilog_linear(seed: int):
         waves=True,
         trace_depth=5,
     )
-    
-    logger.info(f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}")
+
+    logger.info(
+        f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}"
+    )
 
 
 if __name__ == "__main__":
