@@ -139,6 +139,8 @@ def test_emit_verilog_linear(seed: int):
         waves=True,
         trace_depth=5,
     )
+    
+    logger.info(f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}")
 
 
 if __name__ == "__main__":
