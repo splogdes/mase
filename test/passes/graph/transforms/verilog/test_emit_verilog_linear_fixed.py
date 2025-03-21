@@ -48,7 +48,6 @@ class MLP(torch.nn.Module):
         return x
 
 
-# @pytest.mark.dev
 def test_emit_verilog_linear():
     mlp = MLP()
     mg = chop.MaseGraph(model=mlp)
