@@ -64,7 +64,6 @@ class MxIntStreamMonitor(MultiSignalStreamMonitor):
                         "\nGot \n%s, \nExp \n%s,\nDiff \n%s" % (got, exp, diff)
                     )
 
-        # breakpoint()
         if exp_e == got_e:
             check_equality(got_m, exp_m)
         elif abs(diff := (exp_e - got_e)) == 1:

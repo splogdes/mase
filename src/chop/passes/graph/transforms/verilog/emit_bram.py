@@ -332,23 +332,11 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
 
         case "mxint":
             data_width, exponent_width = common_args["precision"]
-            floor_values = mase.module.config.get("floor", False)
             block_size = [
                 hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"],
                 hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"],
             ]
 
-            # mxint_blocks, mxint_exp = mxint_quantizer_for_hw(
-            #     param_data,
-            #     data_width,
-            #     exponent_width,
-            #     [1,hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]],
-            #     floor=floor_values,
-            # )
-
-            # _quant, mxint_blocks, mxint_exp = mxint_quantize(param_data, data_width, exponent_width)
-
-            # breakpoint()
             _quant, mxint_blocks, mxint_exp = block_mxint_quant(
                 param_data,
                 {"width": data_width, "exponent_width": exponent_width},
