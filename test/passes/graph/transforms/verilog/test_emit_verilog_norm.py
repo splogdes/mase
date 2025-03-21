@@ -189,8 +189,8 @@ def emit_verilog_norm(net, x):
     mg, _ = quantize_transform_pass(mg, quant_config)
 
     # TODO: TEMPORARY PATCH DUE TO QUANTIZER BUG NOT UPDATING METADATA
-    for n in mg.fx_graph.nodes:
-        _fix_quantize_step(n, quant_config)
+    # for n in mg.fx_graph.nodes:
+    #     _fix_quantize_step(n, quant_config)
 
     # Add norm params
     mg, _ = add_norm_metadata_gen_lut_analysis_pass(
