@@ -127,6 +127,7 @@ class MxIntMonitor(MultiSignalStreamMonitor):
             tensor_output[i] = (tensor, exp_signed)
 
         self.load_monitor(tensor_output)
+        self.in_flight = True
 
     def _check(self, got, exp):
         got_m, got_e = got
@@ -161,7 +162,7 @@ def _cap(name):
 
 def _emit_cocotb_test(graph, pass_args={}):
     wait_time = pass_args.get("wait_time", 100)
-    wait_unit = pass_args.get("wait_units", "ms")
+    wait_unit = pass_args.get("wait_units", "us")
     num_batches = pass_args.get("num_batches", 1)
     test_template = f"""
 import cocotb
@@ -184,8 +185,7 @@ async def test(dut):
     tb.load_drivers(in_tensors)
     tb.load_monitors(exp_out)
 
-    # await tb.wait_end(timeout={wait_time}, timeout_unit="{wait_unit}")
-    await cocotb.triggers.Timer({wait_time}, '{wait_unit}')
+    await tb.wait_end(timeout={wait_time}, timeout_unit="{wait_unit}")
 """
 
     tb_path = Path.home() / ".mase" / "top" / "hardware" / "test" / "mase_top_tb"
@@ -202,7 +202,6 @@ def _emit_cocotb_tb(graph):
 
             self.input_drivers: Dict[str, FixedDriver | MxIntDriver] = {}
             self.output_monitors: Dict[str, FixedMonitor | MxIntMonitor] = {}
-
             for node in graph.nodes_in:
                 for arg, arg_info in node.meta["mase"]["common"]["args"].items():
                     if "data_in" not in arg:

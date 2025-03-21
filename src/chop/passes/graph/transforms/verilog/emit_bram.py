@@ -70,7 +70,6 @@ def emit_parameters_in_mem_internal_mxint(
         torch.ones(node_type_info["shape"]),
         block_shape=[parallelism, block_size],
     )
-    print(shape)
 
     total_size = math.prod(node_type_info["shape"])
 
