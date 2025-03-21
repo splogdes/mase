@@ -214,8 +214,8 @@ def _emit_cocotb_tb(graph):
             Generate inputs for the model by sampling a random tensor
             for each input argument, according to its shape
 
-            :param num_batches: number of batches to generate for each argument
-            :type num_batches: int
+            :param batches: number of batches to generate for each argument
+            :type batches: int
             :return: a dictionary of input arguments and their corresponding tensors
             :rtype: Dict
             """
