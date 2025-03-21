@@ -39,6 +39,7 @@ class FixedMonitor(StreamMonitor):
     def __init__(self, clk, data, valid, ready, check=True, name=None, unsigned=False):
         super().__init__(clk, data, valid, ready, check, name, unsigned)
 
+
 class MxIntMonitor(MultiSignalStreamMonitor):
     def __init__(self, clk, e_data, m_data, valid, ready, off_by_value=0):
         self.off_by = off_by_value
@@ -126,10 +127,10 @@ class FixedDriver(StreamDriver):
     def __init__(self, clk, data, valid, ready, record_num_beats=False) -> None:
         super().__init__(clk, data, valid, ready, record_num_beats)
 
+
 class MxIntDriver(MultiSignalStreamDriver):
     def __init__(self, clk, data, valid, ready) -> None:
         super().__init__(clk, data, valid, ready)
-
 
 
 def _emit_cocotb_tb(graph):
@@ -148,21 +149,21 @@ def _emit_cocotb_tb(graph):
                     match arg_info.get("type", None):
                         case "mxint" as t:
                             self.input_drivers[arg] = MxIntDriver(
-                                    dut.clk,
-                                    (
-                                        getattr(dut, f"m_{arg}"),
-                                        getattr(dut, f"e_{arg}"),
-                                    ),
-                                    getattr(dut, f"{arg}_valid"),
-                                    getattr(dut, f"{arg}_ready"),
-                                )
+                                dut.clk,
+                                (
+                                    getattr(dut, f"m_{arg}"),
+                                    getattr(dut, f"e_{arg}"),
+                                ),
+                                getattr(dut, f"{arg}_valid"),
+                                getattr(dut, f"{arg}_ready"),
+                            )
                         case "fixed" as t:
                             self.input_drivers[arg] = FixedDriver(
-                                    dut.clk,
-                                    getattr(dut, arg),
-                                    getattr(dut, f"{arg}_valid"),
-                                    getattr(dut, f"{arg}_ready"),
-                                )
+                                dut.clk,
+                                getattr(dut, arg),
+                                getattr(dut, f"{arg}_valid"),
+                                getattr(dut, f"{arg}_ready"),
+                            )
                         case t:
                             raise NotImplementedError(
                                 f"Unsupported type format {t} for {node} {arg}"
@@ -176,7 +177,7 @@ def _emit_cocotb_tb(graph):
                 ].items():
                     if "data_out" not in result:
                         continue
-                    match result_info.get('type', None):
+                    match result_info.get("type", None):
                         case "mxint" as t:
                             self.output_monitors[result] = MxIntMonitor(
                                 dut.clk,
@@ -262,14 +263,20 @@ def _emit_cocotb_tb(graph):
                             in_data_blocks = fixed_preprocess_tensor(
                                 tensor=arg_batches,
                                 q_config={
-                                    "width": self.get_parameter(f"{_cap(arg)}_PRECISION_0"),
+                                    "width": self.get_parameter(
+                                        f"{_cap(arg)}_PRECISION_0"
+                                    ),
                                     "frac_width": self.get_parameter(
                                         f"{_cap(arg)}_PRECISION_1"
                                     ),
                                 },
                                 parallelism=[
-                                    self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_1"),
-                                    self.get_parameter(f"{_cap(arg)}_PARALLELISM_DIM_0"),
+                                    self.get_parameter(
+                                        f"{_cap(arg)}_PARALLELISM_DIM_1"
+                                    ),
+                                    self.get_parameter(
+                                        f"{_cap(arg)}_PARALLELISM_DIM_0"
+                                    ),
                                 ],
                             )
 
@@ -288,7 +295,7 @@ def _emit_cocotb_tb(graph):
                             self.input_drivers[arg].append(block)
 
         def load_monitors(self, expectation):
-            match self.output_monitors['data_out_0']:
+            match self.output_monitors["data_out_0"]:
                 case MxIntMonitor():
                     # Process the expectation tensor
                     config = {
@@ -336,9 +343,12 @@ def _emit_cocotb_tb(graph):
                     # Set expectation for each monitor
                     for block in output_blocks:
                         # ! TO DO: generalize to multi-output models
-                        if len(block) < self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0"):
+                        if len(block) < self.get_parameter(
+                            "DATA_OUT_0_PARALLELISM_DIM_0"
+                        ):
                             block = block + [0] * (
-                                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0") - len(block)
+                                self.get_parameter("DATA_OUT_0_PARALLELISM_DIM_0")
+                                - len(block)
                             )
                         self.output_monitors["data_out_0"].expect(block)
 
