@@ -93,7 +93,7 @@ def test_complex_quantize():
     mg, _ = profile_statistics_analysis_pass(mg, stat_args)
 
     config_files = [
-        "integer.toml",
+        "fixed.toml",
         "toy_integer_by_name.toml",
         "block_fp.toml",
         "log.toml",
