@@ -49,7 +49,7 @@ def test_emit_verilog_mxint(seed: int = 10):
     OUT_FEATURES = block_size * random.randint(1, 10)
     m_width = random.randint(3, 10)
     e_width = random.randint(3, min(m_width, 10))
-    
+
     num_batches = random.randint(1, 100)
     logger.info(
         f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}"

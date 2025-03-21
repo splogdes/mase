@@ -36,7 +36,9 @@ import inspect
 
 
 class FixedDriver(StreamDriver):
-    def __init__(self, clk, data, valid, ready, precision, parallelism, record_num_beats=False) -> None:
+    def __init__(
+        self, clk, data, valid, ready, precision, parallelism, record_num_beats=False
+    ) -> None:
         super().__init__(clk, data, valid, ready, record_num_beats)
         self.precision = precision
         self.parallelism = parallelism
@@ -70,12 +72,25 @@ class MxIntDriver(MultiSignalStreamDriver):
         (_qtensor, mtensor, etensor) = block_mxint_quant(
             tensor_batches, self.config, self.parallelism
         )
-        driver_input = pack_tensor_to_mx_listed_chunk(mtensor, etensor, self.parallelism)
+        driver_input = pack_tensor_to_mx_listed_chunk(
+            mtensor, etensor, self.parallelism
+        )
         self.load_driver(driver_input)
 
 
 class FixedMonitor(StreamMonitor):
-    def __init__(self, clk, data, valid, ready, precision, parallelism, check=True, name=None, unsigned=False):
+    def __init__(
+        self,
+        clk,
+        data,
+        valid,
+        ready,
+        precision,
+        parallelism,
+        check=True,
+        name=None,
+        unsigned=False,
+    ):
         super().__init__(clk, data, valid, ready, check, name, unsigned)
         self.precision = precision
         self.parallelism = parallelism
@@ -101,7 +116,9 @@ class FixedMonitor(StreamMonitor):
 
 
 class MxIntMonitor(MultiSignalStreamMonitor):
-    def __init__(self, clk, e_data, m_data, valid, ready, config, parallelism, off_by_value=0):
+    def __init__(
+        self, clk, e_data, m_data, valid, ready, config, parallelism, off_by_value=0
+    ):
         self.off_by = off_by_value
         self.config = config
         self.parallelism = parallelism
@@ -119,7 +136,9 @@ class MxIntMonitor(MultiSignalStreamMonitor):
         (qtensor, mtensor, etensor) = block_mxint_quant(
             tensor_expectation, self.config, self.parallelism
         )
-        tensor_output = pack_tensor_to_mx_listed_chunk(mtensor, etensor, self.parallelism)
+        tensor_output = pack_tensor_to_mx_listed_chunk(
+            mtensor, etensor, self.parallelism
+        )
 
         exp_max_val = 2 ** self.config["exponent_width"]
         for i, (tensor, exp) in enumerate(tensor_output):
@@ -194,7 +213,6 @@ async def test(dut):
         f.write(test_template)
 
 
-
 def _emit_cocotb_tb(graph):
     class MaseGraphTB(Testbench):
         def __init__(self, dut, fail_on_checks=True):
@@ -253,14 +271,18 @@ def _emit_cocotb_tb(graph):
                     self.input_drivers[arg].log.setLevel(logging.DEBUG)
 
             for node in graph.nodes_out:
-                for result, result_info in node.meta["mase"]["common"]["results"].items():
+                for result, result_info in node.meta["mase"]["common"][
+                    "results"
+                ].items():
                     if "data_out" not in result:
                         continue
                     match result_info.get("type", None):
                         case "mxint":
                             config = {
                                 "width": self.get_parameter("DATA_OUT_0_PRECISION_0"),
-                                "exponent_width": self.get_parameter("DATA_OUT_0_PRECISION_1"),
+                                "exponent_width": self.get_parameter(
+                                    "DATA_OUT_0_PRECISION_1"
+                                ),
                             }
                             parallelism = [
                                 self.get_parameter("DATA_IN_0_PARALLELISM_DIM_1"),
@@ -301,7 +323,9 @@ def _emit_cocotb_tb(graph):
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
             self.model = graph.model
-            self.input_precision = graph.meta["mase"]["common"]["args"]["data_in_0"]["precision"]
+            self.input_precision = graph.meta["mase"]["common"]["args"]["data_in_0"][
+                "precision"
+            ]
 
         def generate_inputs(self, batches=1):
             inputs = {}
