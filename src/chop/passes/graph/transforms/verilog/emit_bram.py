@@ -299,9 +299,9 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
             width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
                 "precision"
             ][0]
-            frac_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
-                "precision"
-            ][1]
+            frac_width = node.meta["mase"].parameters["common"]["args"][
+                verilog_param_name
+            ]["precision"][1]
 
             if node.meta["mase"].module.config.get("floor", False):
                 base_quantizer = integer_floor_quantizer_for_hw
@@ -320,7 +320,9 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                         value = param_data[i * out_size + out_size - 1 - j]
 
                     # TODO: please clear this up later
-                    value = base_quantizer(torch.tensor(value), width, frac_width).item()
+                    value = base_quantizer(
+                        torch.tensor(value), width, frac_width
+                    ).item()
                     value = str(bin(value))
                     value_bits = value[value.find("0b") + 2 :]
                     value_bits = "0" * (width - len(value_bits)) + value_bits
@@ -334,7 +336,9 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
 
             with open(file_name, "w", encoding="utf-8") as outf:
                 outf.write(data_buff)
-            logger.debug(f"Init data {param_name} successfully written into {file_name}")
+            logger.debug(
+                f"Init data {param_name} successfully written into {file_name}"
+            )
 
         case "mxint":
             data_width, exponent_width = common_args["precision"]
