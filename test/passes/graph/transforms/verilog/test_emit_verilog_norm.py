@@ -178,7 +178,7 @@ def emit_verilog_norm(net, x):
         "by": "type",
         "default": {
             "config": {
-                "name": "integer",
+                "name": "fixed",
                 "data_in_width": 8,
                 "data_in_frac_width": 4,
                 "data_out_width": 8,

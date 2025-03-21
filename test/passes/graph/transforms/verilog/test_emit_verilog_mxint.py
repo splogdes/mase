@@ -38,8 +38,7 @@ class MLP(torch.nn.Module):
         return x
 
 
-@pytest.mark.dev
-def test_emit_verilog_linear(seed: int):
+def test_emit_verilog_mxint(seed: int = 10):
     torch.manual_seed(seed)
     random.seed(seed)
 
@@ -144,5 +143,5 @@ if __name__ == "__main__":
     else:
         seed = int(seed)
         logger.info(f"Using provided {seed=}")
-    test_emit_verilog_linear(seed)
+    test_emit_verilog_mxint(seed)
     logger.info(f"{seed=}")

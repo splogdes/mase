@@ -163,7 +163,6 @@ def _emit_cocotb_test(graph, pass_args={}):
     wait_time = pass_args.get("wait_time", 100)
     wait_unit = pass_args.get("wait_units", "ms")
     num_batches = pass_args.get("num_batches", 1)
-    print(pass_args)
     test_template = f"""
 import cocotb
 
@@ -186,7 +185,7 @@ async def test(dut):
     tb.load_monitors(exp_out)
 
     # await tb.wait_end(timeout={wait_time}, timeout_unit="{wait_unit}")
-    await cocotb.triggers.Timer(100, 'us')
+    await cocotb.triggers.Timer({wait_time}, '{wait_unit}')
 """
 
     tb_path = Path.home() / ".mase" / "top" / "hardware" / "test" / "mase_top_tb"
