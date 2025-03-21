@@ -28,10 +28,6 @@ logger = get_logger(__name__)
 #   prefer small models for fast test
 # --------------------------------------------------
 class MLP(torch.nn.Module):
-    """
-    Toy FC model for digit recognition on MNIST
-    """
-
     def __init__(self, in_features, out_features) -> None:
         super().__init__()
 
