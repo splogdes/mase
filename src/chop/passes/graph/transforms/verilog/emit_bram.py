@@ -159,7 +159,7 @@ module {node_param_name}_rom #(
   logic [DWIDTH-1:0] q0_t1;
 
   initial begin
-    $readmemh("{data_name}.dat", ram);
+    $readmemh("{data_name}", ram);
   end
 
   assign q0 = q0_t1;
@@ -278,7 +278,7 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
         hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_0"]
         * hw_verilog[f"{_cap(verilog_param_name)}_PARALLELISM_DIM_1"]
     )
-    out_depth = (total_size + out_size - 1) // out_size
+    out_depth = int((total_size + out_size - 1) // out_size)
 
     param_data = mase.module.get_parameter(param_name).data
     if hw_interface["transpose"]:
@@ -296,39 +296,45 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
 
         case "fixed":
             param_data = torch.flatten(param_data).tolist()
-            width, frac_width = common_args["precision"]
+            width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][0]
+            frac_width = node.meta["mase"].parameters["common"]["args"][verilog_param_name][
+                "precision"
+            ][1]
 
-            if mase.module.config.get("floor", False):
+            if node.meta["mase"].module.config.get("floor", False):
                 base_quantizer = integer_floor_quantizer_for_hw
             else:
                 base_quantizer = integer_quantizer_for_hw
 
+            scale = 2**frac_width
+            thresh = 2**width
             data_buff = ""
-            for i in range(out_depth):
-                line_values = []
-                start_idx = i * out_size
-                end_idx = start_idx + out_size
-
-                for idx in range(end_idx - 1, start_idx - 1, -1):
-                    if idx >= len(param_data):
+            for i in range(0, out_depth):
+                line_buff = ""
+                for j in range(0, out_size):
+                    if i * out_size + out_size - 1 - j >= len(param_data):
                         value = 0
                     else:
-                        value = param_data[idx]
+                        value = param_data[i * out_size + out_size - 1 - j]
 
-                    quantized = base_quantizer(
-                        torch.tensor(value), width, frac_width
-                    ).item()
-                    hex_str = format(quantized, "0{}X".format(width // 4))
-                    line_values.append(hex_str)
+                    # TODO: please clear this up later
+                    value = base_quantizer(torch.tensor(value), width, frac_width).item()
+                    value = str(bin(value))
+                    value_bits = value[value.find("0b") + 2 :]
+                    value_bits = "0" * (width - len(value_bits)) + value_bits
+                    assert len(value_bits) == width
+                    value_bits = hex(int(value_bits, 2))
+                    value_bits = value_bits[value_bits.find("0x") + 2 :]
+                    value_bits = "0" * (width // 4 - len(value_bits)) + value_bits
+                    line_buff = value_bits + line_buff
 
-                data_buff += "".join(line_values) + "\n"
+                data_buff += line_buff + "\n"
 
-            dat_file = file_name + ".dat"
-            with open(dat_file, "w", encoding="utf-8") as outf:
+            with open(file_name, "w", encoding="utf-8") as outf:
                 outf.write(data_buff)
-
-            logger.debug(f"Init data {param_name} successfully written into {dat_file}")
-            assert os.path.isfile(dat_file), "ROM data generation failed."
+            logger.debug(f"Init data {param_name} successfully written into {file_name}")
 
         case "mxint":
             data_width, exponent_width = common_args["precision"]
@@ -529,7 +535,7 @@ module {node_param_name}_rom #(
   logic [DWIDTH-1:0] q0_t1;
 
   initial begin
-    $readmemh("{data_name}.dat", ram);
+    $readmemh("{data_name}", ram);
   end
 
   assign q0 = q0_t1;
