@@ -372,18 +372,11 @@ def emit_parameters_in_dat_internal(node, param_name, file_name):
                     # convert to binary string with variable 0 padding
                     bin_str = f"{value:0{data_width}b}"
                     line_values.append(bin_str)
-                print(line_values)
-                block_buff += "".join(line_values) + "\n"
+                block_buff += "_".join(line_values) + "\n"
 
                 # convert to padded hex value 
                 hex_str = f"{int(e):0{(exponent_width // 4) + 1}X}"
                 exp_buff += hex_str + "\n"
-
-            # block_buff = ""
-            # for i in range(mxint_blocks.shape[1]):
-
-            # exp_buff = ""
-            # for exp in mxint_exp.flatten().tolist():
 
             block_file = file_name + "_block.dat"
             exp_file = file_name + "_exp.dat"

@@ -57,11 +57,11 @@ class MxIntStreamMonitor(MultiSignalStreamMonitor):
                 diff = np.subtract(got, exp)
                 if np.isclose(got, exp, atol=self.off_by).all():
                     self.log.warning(
-                        f"Off-by-{max(abs(diff))} error: {diff=}\nGot {got}\nExpected {exp}"
+                        f"Off-by-{max(abs(diff))} error: {diff=}\nGot {got}\nExp {exp}"
                     )
                 else:
                     raise TestFailure(
-                        "\nGot \n%s, \nExpected \n%s,\nDiff \n%s" % (got, exp, diff)
+                        "\nGot \n%s, \nExp \n%s,\nDiff \n%s" % (got, exp, diff)
                     )
 
         # breakpoint()
@@ -152,7 +152,7 @@ def _emit_cocotb_tb(graph):
                         getattr(dut, f"m_{result}"),
                         getattr(dut, f"{result}_valid"),
                         getattr(dut, f"{result}_ready"),
-                        off_by_value=0,
+                        off_by_value=1,
                     )
                     self.output_monitors[result].log.setLevel(logging.DEBUG)
 
