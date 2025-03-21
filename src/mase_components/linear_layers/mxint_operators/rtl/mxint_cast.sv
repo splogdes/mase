@@ -18,15 +18,15 @@ module mxint_cast #(
 
     // Input Data
     input  logic [IN_MAN_WIDTH-1:0] mdata_in     [BLOCK_SIZE-1:0],
-    input  logic        [IN_EXP_WIDTH-1:0] edata_in,
-    input  logic                           data_in_valid,
-    output logic                           data_in_ready,
+    input  logic [IN_EXP_WIDTH-1:0] edata_in,
+    input  logic                    data_in_valid,
+    output logic                    data_in_ready,
 
     // Output Data
     output logic [OUT_MAN_WIDTH-1:0] mdata_out     [BLOCK_SIZE-1:0],
-    output logic        [OUT_EXP_WIDTH-1:0] edata_out,
-    output logic                            data_out_valid,
-    input  logic                            data_out_ready
+    output logic [OUT_EXP_WIDTH-1:0] edata_out,
+    output logic                     data_out_valid,
+    input  logic                     data_out_ready
 );
 
   // =============================
@@ -89,8 +89,7 @@ module mxint_cast #(
   if (FIFO_DEPTH == 0) begin
 
     always_comb begin
-      for (int i = 0; i < BLOCK_SIZE; i++)
-      begin
+      for (int i = 0; i < BLOCK_SIZE; i++) begin
         mbuffer_data_for_out[i] = $signed(mdata_in[i]);
       end
       ebuffer_data_for_out = edata_in;
@@ -118,12 +117,10 @@ module mxint_cast #(
         .data_out_ready(buffer_data_for_out_ready)
     );
 
-    always_comb
-    begin
-        for (int i = 0; i < BLOCK_SIZE; i++)
-        begin
-            mbuffer_data_for_out[i] = $signed(fifo_out[i]);
-        end
+    always_comb begin
+      for (int i = 0; i < BLOCK_SIZE; i++) begin
+        mbuffer_data_for_out[i] = $signed(fifo_out[i]);
+      end
     end
 
   end
