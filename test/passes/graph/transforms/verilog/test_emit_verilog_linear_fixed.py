@@ -72,7 +72,7 @@ def test_emit_verilog_linear():
         "configs",
         "tests",
         "quantize",
-        "fixed.toml",
+        "integer.toml",
     )
 
     # load toml config file
