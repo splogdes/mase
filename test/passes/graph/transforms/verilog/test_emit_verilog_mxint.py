@@ -143,6 +143,7 @@ def test_emit_verilog_mxint_cat(seed: int = 10):
 
     shared_emit_verilog_mxint(linear, input_shape, params)
 
+
 def shared_emit_verilog_mxint(model, input_shape, params: dict):
     # Set seeds
     torch.manual_seed(params["seed"])
