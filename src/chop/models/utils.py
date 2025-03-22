@@ -125,7 +125,7 @@ class MaseModelInfo:
     @property
     def is_nerf_model(self):
         return self.task_type == ModelTaskType.NERF
-    
+
     @property
     def is_nerf_vision_model(self):
         return self.task_type == ModelTaskType.NERF_VISION

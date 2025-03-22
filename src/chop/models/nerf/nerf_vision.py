@@ -88,7 +88,9 @@ class NeRFVision(nn.Module):
 
         if self.use_viewdirs:
             # Add a new dimension and expand it
-            expanded_input_views = input_views.unsqueeze(1).expand(-1, h.shape[1], -1)  # -1 means it will retain the size of that dimension
+            expanded_input_views = input_views.unsqueeze(1).expand(
+                -1, h.shape[1], -1
+            )  # -1 means it will retain the size of that dimension
             alpha = self.alpha_linear(h)
             feature = self.feature_linear(h)
             h = torch.cat([feature, expanded_input_views], -1)
@@ -172,10 +174,12 @@ def get_nerfvision(
         **kwargs,
     )
     if pretrained:
-        weights = np.load('/teamspace/studios/this_studio/mase-team-coursework/mase/nerf_vision/lego_example/model_200000.npy', allow_pickle=True)
+        weights = np.load(
+            "/teamspace/studios/this_studio/mase-team-coursework/mase/nerf_vision/lego_example/model_200000.npy",
+            allow_pickle=True,
+        )
         model.set_weights(weights)
     else:
         pretrained_weight_cls = None
 
     return model
-

@@ -111,7 +111,11 @@ def get_dummy_input(
         item = next(train_iter)
         for key in item:
             item[key] = item[key].to(device)
-        dummy_inputs = {"pts": item['pts'], 'viewdirs': item['viewdirs'], 'targets': item}
+        dummy_inputs = {
+            "pts": item["pts"],
+            "viewdirs": item["viewdirs"],
+            "targets": item,
+        }
 
     elif model_info.is_nlp_model:
         match task:

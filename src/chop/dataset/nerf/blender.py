@@ -191,6 +191,7 @@ class BlenderDatasetBase(Dataset):
 
         return sample
 
+
 def pre_render_vision(
     rays,
     N_samples=8,
@@ -215,9 +216,9 @@ def pre_render_vision(
     z_vals = z_vals.expand(N_rays, N_samples)
 
     # Perturb sampling time along each ray.
-    if perturb > 0.:
+    if perturb > 0.0:
         # get intervals between samples
-        mids = .5 * (z_vals[..., 1:] + z_vals[..., :-1])
+        mids = 0.5 * (z_vals[..., 1:] + z_vals[..., :-1])
         upper = torch.concat([mids, z_vals[..., -1:]], -1)
         lower = torch.concat([z_vals[..., :1], mids], -1)
         # stratified samples in those intervals
@@ -229,8 +230,9 @@ def pre_render_vision(
     viewdirs = torch.reshape(viewdirs, [-1, 3]).to(torch.float32)
 
     # Points in space to evaluate model at.
-    pts = rays_o[..., None, :] + rays_d[..., None, :] * \
-        z_vals[..., :, None]  # [N_rays, N_samples, 3]
+    pts = (
+        rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]
+    )  # [N_rays, N_samples, 3]
 
     inputs = {}
 

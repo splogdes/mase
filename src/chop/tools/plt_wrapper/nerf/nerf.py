@@ -57,7 +57,7 @@ class NeRFModelWrapper(WrapperBase):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        batch = {k: v.squeeze() for k,v in batch.items()}
+        batch = {k: v.squeeze() for k, v in batch.items()}
         pts, viewdirs, rgbs = batch["pts"], batch["viewdirs"], batch["rgbs"]
         results = self(pts, viewdirs)
         log = {"val_loss": self.loss(results, batch)}
@@ -66,9 +66,7 @@ class NeRFModelWrapper(WrapperBase):
 
         if batch_idx == 0:
             W, H = self.hparams.img_wh
-            img = (
-                results["rgb"].view(H, W, 3).permute(2, 0, 1).cpu()
-            )  # (3, H, W)
+            img = results["rgb"].view(H, W, 3).permute(2, 0, 1).cpu()  # (3, H, W)
             img_gt = rgbs.view(H, W, 3).permute(2, 0, 1).cpu()  # (3, H, W)
             depth = visualize_depth(results["depth"].view(H, W))  # (3, H, W)
             stack = torch.stack([img_gt, img, depth])  # (3, 3, H, W)
@@ -100,7 +98,7 @@ class NeRFModelWrapper(WrapperBase):
         self.log("val_loss_epoch", loss_epoch, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        batch = {k: v.squeeze() for k,v in batch.items()}
+        batch = {k: v.squeeze() for k, v in batch.items()}
         pts, viewdirs, rgbs = batch["pts"], batch["viewdirs"], batch["rgbs"]
         results = self(pts, viewdirs)
         loss = self.loss(results, batch)

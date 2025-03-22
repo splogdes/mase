@@ -4,7 +4,10 @@ from torchmetrics.classification import MulticlassAccuracy
 from torchmetrics.text import Perplexity
 from torchmetrics import MeanMetric
 
-from chop.tools.plt_wrapper.nerf.losses import ColorLoss, NerfAccuracy
+from chop.tools.plt_wrapper.nerf.losses import (
+    ColorLoss,
+    NerfPsnr,
+)
 
 from .base import SWRunnerBase
 
@@ -44,7 +47,7 @@ class RunnerBasicEval(SWRunnerBase):
                 case _:
                     raise ValueError(f"task {self.task} is not supported.")
         elif self.model_info.is_nerf_vision_model:
-            self.metric = NerfAccuracy().to(self.accelerator)
+            self.metric = NerfPsnr().to(self.accelerator)
             self.color_loss = ColorLoss().to(self.accelerator)
         elif self.model_info.is_nlp_model:
             match self.task:
@@ -84,18 +87,19 @@ class RunnerBasicEval(SWRunnerBase):
         acc = self.metric(logits, y)
         self.loss(loss)
         return {"loss": loss, "accuracy": acc}
-    
+
     def nerf_vision_cls_forward(self, batch, model):
         for k, v in batch.items():
             batch[k] = v.to(self.accelerator)
-        if len(batch['pts'].shape) == 4:
+        if len(batch["pts"].shape) == 4:
             for k in batch:
                 batch[k] = batch[k].squeeze(0)
-        logits = model(batch['pts'], batch['viewdirs'])
+        logits = model(batch["pts"], batch["viewdirs"])
         loss = self.color_loss(logits, batch)
-        acc = self.metric(logits, batch)
+        psnr = self.metric(logits, batch)
         self.loss(loss)
-        return {"loss": loss, "accuracy": acc}
+
+        return {"loss": loss, "psnr": psnr}
 
     def nlp_cls_forward(self, batch, model):
         batch = {
@@ -127,8 +131,8 @@ class RunnerBasicEval(SWRunnerBase):
             reduced["perplexity"] = self.metric.compute().item()
         elif isinstance(self.metric, MulticlassAccuracy):
             reduced["accuracy"] = self.metric.compute().item()
-        elif isinstance(self.metric, NerfAccuracy):
-            reduced["accuracy"] = self.metric.compute().item()
+        elif isinstance(self.metric, NerfPsnr):
+            reduced["psnr"] = self.metric.compute().item()
         else:
             raise ValueError(f"metric {self.metric} is not supported.")
         return reduced
