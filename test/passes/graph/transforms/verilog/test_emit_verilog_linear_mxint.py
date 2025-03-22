@@ -32,34 +32,48 @@ class MLP(torch.nn.Module):
         super().__init__()
 
         self.fc1 = nn.Linear(in_features, out_features)
+        self.fc2 = nn.Linear(out_features, out_features)
+        self.fc3 = nn.Linear(out_features, out_features)
+        self.fc4 = nn.Linear(out_features, out_features)
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        return x
+        l1 = (
+            torch.relu(
+                self.fc1(x)
+            )
+        )
+        l2 = torch.relu(self.fc2(l1))
+        l3 = torch.relu(self.fc2(l2))
+        l4 = torch.relu(self.fc2(l3))
+        return l4
 
 
 def test_emit_verilog_mxint(seed: int = 10):
     torch.manual_seed(seed)
     random.seed(seed)
 
-    block_size = 4  # block dim 0
-    batch_size = 6  # block dim 1
+    # size of the overall block is given by block_size * batch_parallelism
+    block_size = random.randint(1,10)          # block dim 0
+    batch_parallelism = random.randint(1,10)   # block dim 1
 
     IN_FEATURES = block_size * random.randint(1, 10)
     OUT_FEATURES = block_size * random.randint(1, 10)
-    m_width = random.randint(3, 10)
-    e_width = random.randint(3, min(m_width, 10))
+    m_width = random.randint(4, 10)
+    e_width = random.randint(4, min(m_width, 10))
 
-    num_batches = random.randint(1, 100)
+    # number of batches to be processed by the hw block at one time
+    batches = batch_parallelism * random.randint(1, 20)
+    # number of times to send a set of batches to the hardware module
+    num_batches = random.randint(1,20) 
     logger.info(
-        f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}"
+        f"{block_size=}, {batch_parallelism=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {batches=}"
     )
 
     mlp = MLP(IN_FEATURES, OUT_FEATURES)
     mg = chop.MaseGraph(model=mlp)
 
     # Provide a dummy input for the graph so it can use for tracing
-    x = torch.randn((batch_size, IN_FEATURES))
+    x = torch.randn((batches, IN_FEATURES))
     dummy_in = {"x": x}
 
     mg, _ = passes.init_metadata_analysis_pass(mg, None)
@@ -74,7 +88,7 @@ def test_emit_verilog_mxint(seed: int = 10):
                 # data
                 "data_in_width": m_width,
                 "data_in_exponent_width": e_width,
-                "data_in_block_size": [batch_size, block_size],
+                "data_in_block_size": [batch_parallelism, block_size],
                 # weight
                 "weight_width": m_width,
                 "weight_exponent_width": e_width,
@@ -89,26 +103,32 @@ def test_emit_verilog_mxint(seed: int = 10):
 
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
     _ = report_node_type_analysis_pass(mg)
-
+                
     # hack to pass the correct parallelism parameters around
     for node in mg.fx_graph.nodes:
         node_meta = node.meta["mase"].parameters["common"]
+        args = node_meta["args"]
+        results = node_meta["results"]
         match node_meta["mase_op"]:
             case "linear":
-                args = node_meta["args"]
                 args["data_in_0"]["parallelism_0"] = block_size
-                args["data_in_0"]["parallelism_1"] = batch_size
+                args["data_in_0"]["parallelism_1"] = batch_parallelism
                 args["weight"]["parallelism_0"] = block_size
                 args["weight"]["parallelism_1"] = block_size
                 args["bias"]["parallelism_0"] = block_size
                 args["bias"]["parallelism_1"] = 1
 
-                results = node_meta["results"]
                 results["data_out_0"]["parallelism_0"] = block_size
-                results["data_out_0"]["parallelism_1"] = batch_size
+                results["data_out_0"]["parallelism_1"] = batch_parallelism
+            case 'relu':
+                args["data_in_0"]["parallelism_0"] = block_size
+                args["data_in_0"]["parallelism_1"] = batch_parallelism
+                results["data_out_0"]["parallelism_0"] = block_size
+                results["data_out_0"]["parallelism_1"] = batch_parallelism
 
     mg, _ = passes.add_hardware_metadata_analysis_pass(mg)
-    mg, _ = passes.report_node_hardware_type_analysis_pass(mg)  # pretty print
+    mg, _ = passes.report_node_hardware_type_analysis_pass(mg)
+    mg, _ = passes.report_node_meta_param_analysis_pass(mg)
 
     mg, _ = passes.emit_verilog_top_transform_pass(mg)
     mg, _ = passes.emit_bram_transform_pass(mg)
@@ -130,7 +150,7 @@ def test_emit_verilog_mxint(seed: int = 10):
     )
 
     logger.info(
-        f"{block_size=}, {batch_size=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {num_batches=}"
+        f"{block_size=}, {batch_parallelism=}, {IN_FEATURES=}, {OUT_FEATURES=}, {m_width=}, {e_width=}, {batches=}"
     )
 
 

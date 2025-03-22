@@ -296,7 +296,7 @@ def _emit_cocotb_tb(graph):
                                 getattr(dut, f"{result}_ready"),
                                 config,
                                 parallelism,
-                                off_by_value=1,
+                                off_by_value=2,
                             )
                         case "fixed":
                             precision = [
