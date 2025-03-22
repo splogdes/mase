@@ -212,7 +212,7 @@ def relu_mxint(x, inplace=False, config=None):
             config["data_in_exponent_width"],
             config["data_in_block_size"],
         )
-        
+
         out_width, out_exponent_width, out_block_size = (
             config.get("data_in_width", x_width),
             config.get("data_in_exponent_width", x_exponent_width),
@@ -227,7 +227,7 @@ def relu_mxint(x, inplace=False, config=None):
             block_size=x_block_size,
             skip_first_dim=x_more_than_2_dims,
         )
-        
+
         out_quantizer = partial(
             mxint_quantizer,
             width=out_width,
@@ -242,7 +242,11 @@ def relu_mxint(x, inplace=False, config=None):
         x = x_quantizer(x)
         x = torch.reshape(x, x_shape)
         relu_out = F.relu(x, inplace=inplace)
-        relu_out = torch.flatten(relu_out, start_dim=0, end_dim=-3) if x_more_than_2_dims else relu_out
+        relu_out = (
+            torch.flatten(relu_out, start_dim=0, end_dim=-3)
+            if x_more_than_2_dims
+            else relu_out
+        )
         relu_out_q = out_quantizer(relu_out)
         relu_out_q = torch.reshape(relu_out_q, x_shape)
         return relu_out_q

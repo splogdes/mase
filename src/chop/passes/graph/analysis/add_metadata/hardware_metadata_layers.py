@@ -122,7 +122,7 @@ INTERNAL_COMP: Dict[str, Dict[supported_hw_quantisations, IpDescType]] = {
                 "memory/rtl/skid_buffer.sv",
                 "memory/rtl/simple_dual_port_ram.sv",
                 "common/rtl/join2.sv",
-            ],  
+            ],
         },
     },
     "hardshrink": {
