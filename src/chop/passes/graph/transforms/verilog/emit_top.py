@@ -817,7 +817,7 @@ assign {to_name}_data_in_0 = {from_name}_data_out_{select};
                     from_signal=f"{from_name}_data_out_0",
                     to_signal=f"{to_name}_data_in_{i}",
                     node_name=node.name,
-                    direction="output",
+                    direction="input",
                 )
         return wires
 

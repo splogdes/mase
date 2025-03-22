@@ -204,7 +204,7 @@ def relu_block_log(x, inplace=False, config=None):
 
 def relu_mxint(x, inplace=False, config=None):
     bypass = config.get("bypass", False)
-    if bypass:
+    if bypass or isinstance(x, torch.fx.proxy.Proxy):
         return F.relu(x, inplace=inplace)
     else:
         x_width, x_exponent_width, x_block_size = (
