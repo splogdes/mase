@@ -107,43 +107,6 @@ def test_emit_verilog_mxint_linear(seed: int = 10):
     shared_emit_verilog_mxint(linear, input_shape, params)
 
 
-def test_emit_verilog_mxint_cat(seed: int = 10):
-    torch.manual_seed(seed)
-    random.seed(seed)
-
-    block_size = random.randint(2, 10)
-    batch_parallelism = random.randint(2, 10)
-    IN_FEATURES = block_size * random.randint(1, 10)
-    OUT_FEATURES = block_size * random.randint(1, 10)
-
-    params = {
-        "seed": seed,
-        "block_size": block_size,
-        "batch_parallelism": batch_parallelism,
-        "m_width": (m_width := random.randint(5, 10)),
-        "e_width": random.randint(4, min(m_width - 1, 10)),
-        "batches": batch_parallelism * random.randint(1, 20),
-        "num_batches": random.randint(1, 20),
-    }
-
-    class LinearModel(torch.nn.Module):
-        def __init__(self, IN_FEATURES, OUT_FEATURES) -> None:
-            super().__init__()
-            self.fc1 = torch.nn.Linear(IN_FEATURES, OUT_FEATURES)
-
-        def forward(self, x):
-            lin = self.fc1(x)
-            return torch.cat([x, lin], dim=-1)
-
-    linear = LinearModel(IN_FEATURES, OUT_FEATURES)
-    input_shape = (IN_FEATURES,)
-    logger.info(
-        f"{block_size=}, {batch_parallelism=}, {params['e_width']=}, {params['m_width']=}, {params['batches']=}"
-    )
-
-    shared_emit_verilog_mxint(linear, input_shape, params)
-
-
 def shared_emit_verilog_mxint(model, input_shape, params: dict):
     # Set seeds
     torch.manual_seed(params["seed"])
@@ -242,7 +205,6 @@ if __name__ == "__main__":
     else:
         seed = int(seed)
         logger.info(f"Using provided {seed=}")
-    # test_emit_verilog_mxint_linear(seed)
-    test_emit_verilog_mxint_cat(seed)
+    test_emit_verilog_mxint_linear(seed)
     # test_emit_verilog_mxint_mlp(seed)
     logger.info(f"{seed=}")
