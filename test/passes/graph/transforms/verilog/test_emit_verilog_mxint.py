@@ -107,7 +107,7 @@ def test_emit_verilog_mxint_linear(seed: int = 10):
     shared_emit_verilog_mxint(linear, input_shape, params)
 
 
-def shared_emit_verilog_mxint(model, input_shape, params: dict):
+def shared_emit_verilog_mxint(model, input_shape, params: dict, simulate: bool = True):
     # Set seeds
     torch.manual_seed(params["seed"])
     random.seed(params["seed"])
@@ -176,26 +176,29 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict):
     mg, _ = passes.emit_verilog_top_transform_pass(mg)
     mg, _ = passes.emit_bram_transform_pass(mg)
     mg, _ = passes.emit_internal_rtl_transform_pass(mg)
-    mg, _ = passes.emit_cocotb_transform_pass(
-        mg,
-        pass_args={
-            "wait_time": 10 * block_size * batch_parallelism * num_batches,
-            "wait_unit": "us",
-            "num_batches": num_batches,
-        },
-    )
 
-    simulate(
-        skip_build=False,
-        skip_test=False,
-        simulator="verilator",
-        waves=True,
-    )
+    if (simulate):
+        mg, _ = passes.emit_cocotb_transform_pass(
+            mg,
+            pass_args={
+                "wait_time": 10 * block_size * batch_parallelism * num_batches,
+                "wait_unit": "us",
+                "num_batches": num_batches,
+            },
+        )
+
+        simulate(
+            skip_build=False,
+            skip_test=False,
+            simulator="verilator",
+            waves=True,
+        )
 
     logger.info(
         f"{block_size=}, {batch_parallelism=}, {m_width=}, {e_width=}, {batches=}"
     )
 
+    return model, mg.model
 
 if __name__ == "__main__":
     seed = os.getenv("COCOTB_SEED")

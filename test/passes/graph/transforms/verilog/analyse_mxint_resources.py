@@ -83,8 +83,6 @@ def get_params(trial):
     mlp = MLP(mlp_features)
     input_shape = (mlp_features[0],)
 
-    dump_param(trial.number, trial.params)
-
     logger.info(
         f"{block_size=}, {batch_parallelism=}, {params['e_width']=}, {params['m_width']=}, {params['batches']=}"
     )
@@ -121,7 +119,8 @@ def get_bram_uram_util(filename):
     return {"bram": bram_util, "uram": uram_util}
 
 def getResources(trial):
-    _, mg, mlp = get_params(trial)
+    params, mg, mlp = get_params(trial)
+    dump_param(trial.number, params)
     writeTrialNumber(trial.number)
     # os.system(f'vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl')
     bram_utils = get_bram_uram_util(f'{Path.cwd()}/resources/util_{trial.number}.txt')
@@ -171,7 +170,4 @@ def main():
         print(f"Trial {trial.number}: {trial.values}")
 
 if __name__ == '__main__':
-    write_value(0, "avg_msg", 0.1234)
-    write_value(0, "new_metric", 0.5678)
-    write_value(1, "avg_msg", 0.4321)
-    # main()
+    main()
