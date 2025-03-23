@@ -25,16 +25,6 @@ set_logging_verbosity("debug")
 
 logger = get_logger(__name__)
 
-batch_size = 6
-block_size = 4
-
-search_space = {
-    "IN_FEATURES" : [block_size * i for i in range(1, 4)],
-    "OUT_FEATURES" : [block_size * i for i in range(1, 4)],
-    "m_width" : [i for i in range(3, 6)],
-    "e_width" : [i for i in range(3, 6)]
-}
-
 def dump_param(trial_number, quan_args, filename="output.json"):
     try:
         with open(filename, "r") as file:
@@ -66,9 +56,9 @@ def write_value(trial_number, name, value, filename="output.json"):
 def get_params(trial):
 
     block_size = trial.suggest_int('block_size', 2, 10)
-    batch_parallelism = random.randint(2, 10)
-    mlp_depth = random.randint(1, 10)
-    mlp_features = [block_size * random.randint(1, 10) for i in range(mlp_depth + 1)]
+    batch_parallelism = trial.suggest_int('batch_parallelism', 2, 10)
+    mlp_depth = 4
+    mlp_features = [block_size * 4 for i in range(mlp_depth + 1)]
 
     params = {
         "seed": trial.number,
@@ -76,8 +66,8 @@ def get_params(trial):
         "batch_parallelism": batch_parallelism,
         "m_width": (m_width := trial.suggest_int('m_width', 4, 10)),
         "e_width": trial.suggest_int('e_width', 3, min(m_width - 1, 10)),
-        "batches": batch_parallelism * random.randint(1, 10),
-        "num_batches": random.randint(1, 10),
+        "batches": batch_parallelism * 4,
+        "num_batches": 10,
     }
 
     mlp = MLP(mlp_features)
@@ -122,7 +112,7 @@ def getResources(trial):
     params, mg, mlp = get_params(trial)
     dump_param(trial.number, params)
     writeTrialNumber(trial.number)
-    # os.system(f'vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl')
+    os.system(f'vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl')
     bram_utils = get_bram_uram_util(f'{Path.cwd()}/resources/util_{trial.number}.txt')
     clb_luts = extract_site_type_used_util(f'{Path.cwd()}/resources/util_{trial.number}.txt')
     out = clb_luts['CLB LUTs*']['Util%'] + clb_luts['CLB Registers']['Util%'] + clb_luts['CARRY8']['Util%'] + bram_utils['bram'] + bram_utils['uram']
@@ -160,7 +150,7 @@ def main():
 
     study.optimize(
         lambda trial: (getResources(trial), getAccuracy(trial)),
-        n_trials=1,
+        n_trials=100,
         timeout=60*60*24,
         n_jobs=1
     )
