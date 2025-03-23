@@ -55,10 +55,10 @@ def write_value(trial_number, name, value, filename="output.json"):
 
 def get_params(trial):
 
-    block_size = trial.suggest_int('block_size', 2, 10)
+    block_size = 2**trial.suggest_int('block_size', 1, 8)
     batch_parallelism = trial.suggest_int('batch_parallelism', 2, 10)
     mlp_depth = 4
-    mlp_features = [block_size * 4 for i in range(mlp_depth + 1)]
+    mlp_features = [256 for i in range(mlp_depth + 1)]
 
     params = {
         "seed": trial.number,
