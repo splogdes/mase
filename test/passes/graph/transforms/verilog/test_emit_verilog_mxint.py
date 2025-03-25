@@ -107,7 +107,7 @@ def test_emit_verilog_mxint_linear(seed: int = 10):
     shared_emit_verilog_mxint(linear, input_shape, params)
 
 
-def shared_emit_verilog_mxint(model, input_shape, params: dict, simulate: bool = True):
+def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True):
     # Set seeds
     torch.manual_seed(params["seed"])
     random.seed(params["seed"])
@@ -177,7 +177,7 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, simulate: bool =
     mg, _ = passes.emit_bram_transform_pass(mg)
     mg, _ = passes.emit_internal_rtl_transform_pass(mg)
 
-    if simulate:
+    if sim:
         mg, _ = passes.emit_cocotb_transform_pass(
             mg,
             pass_args={
@@ -209,6 +209,6 @@ if __name__ == "__main__":
     else:
         seed = int(seed)
         logger.info(f"Using provided {seed=}")
-    test_emit_verilog_mxint_linear(seed)
-    # test_emit_verilog_mxint_mlp(seed)
+    # test_emit_verilog_mxint_linear(seed)
+    test_emit_verilog_mxint_mlp(seed)
     logger.info(f"{seed=}")
