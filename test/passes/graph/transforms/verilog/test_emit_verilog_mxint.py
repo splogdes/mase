@@ -177,7 +177,7 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, simulate: bool =
     mg, _ = passes.emit_bram_transform_pass(mg)
     mg, _ = passes.emit_internal_rtl_transform_pass(mg)
 
-    if (simulate):
+    if simulate:
         mg, _ = passes.emit_cocotb_transform_pass(
             mg,
             pass_args={
@@ -199,6 +199,7 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, simulate: bool =
     )
 
     return model, mg.model
+
 
 if __name__ == "__main__":
     seed = os.getenv("COCOTB_SEED")

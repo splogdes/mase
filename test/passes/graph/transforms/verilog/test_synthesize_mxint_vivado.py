@@ -25,15 +25,6 @@ set_logging_verbosity("debug")
 
 logger = get_logger(__name__)
 
-batch_size = 6
-block_size = 4
-
-search_space = {
-    "IN_FEATURES" : [block_size * i for i in range(1, 4)],
-    "OUT_FEATURES" : [block_size * i for i in range(1, 4)],
-    "m_width" : [i for i in range(3, 6)],
-    "e_width" : [i for i in range(3, 6)]
-}
 
 def dump_param(trial_number, quan_args, filename="output.json"):
     try:
@@ -58,32 +49,31 @@ def write_value(trial_number, name, value, filename="output.json"):
     if str(trial_number) in data.keys():
         data[str(trial_number)][name] = value
     else:
-        data[str(trial_number)] = {name : value}
+        data[str(trial_number)] = {name: value}
 
     with open(filename, "w") as file:
         json.dump(data, file, indent=4)
 
+
 def get_params(trial):
 
-    block_size = trial.suggest_int('block_size', 2, 10)
-    batch_parallelism = random.randint(2, 10)
-    mlp_depth = random.randint(1, 10)
-    mlp_features = [block_size * random.randint(1, 10) for i in range(mlp_depth + 1)]
+    block_size = 2 ** trial.suggest_int("block_size", 1, 4)
+    batch_parallelism = 2 ** trial.suggest_int("batch_parallelism", 1, 4)
+    mlp_depth = 3
+    mlp_features = [128 for i in range(mlp_depth + 1)]
 
     params = {
         "seed": trial.number,
         "block_size": block_size,
         "batch_parallelism": batch_parallelism,
-        "m_width": (m_width := trial.suggest_int('m_width', 4, 10)),
-        "e_width": trial.suggest_int('e_width', 3, min(m_width - 1, 10)),
-        "batches": batch_parallelism * random.randint(1, 10),
-        "num_batches": random.randint(1, 10),
+        "m_width": (m_width := trial.suggest_int("m_width", 4, 10)),
+        "e_width": trial.suggest_int("e_width", 3, min(m_width - 1, 10)),
+        "batches": 128,
+        "num_batches": 10,
     }
 
     mlp = MLP(mlp_features)
     input_shape = (mlp_features[0],)
-
-    dump_param(trial.number, trial.params)
 
     logger.info(
         f"{block_size=}, {batch_parallelism=}, {params['e_width']=}, {params['m_width']=}, {params['batches']=}"
@@ -93,16 +83,20 @@ def get_params(trial):
 
     return params, mg, mlp
 
+
 def writeTrialNumber(trial_number):
     with open(config_file, "w") as f:
-        f.write(f'set trial_number {trial_number}\n')
+        f.write(f"set trial_number {trial_number}\n")
+        f.write(f"set top_dir {Path.home()}/.mase/top/\n")
+        f.write(f"set mase_dir {Path.cwd()}/")
+
 
 def extract_site_type_used_util(filename):
     site_data = {}
-    with open(filename, 'r') as file:
+    with open(filename, "r") as file:
         lines = file.readlines()
 
-    pattern = re.compile(r'\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|.*?\|\s*(\d+\.\d+)\s*\|')
+    pattern = re.compile(r"\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|.*?\|\s*(\d+\.\d+)\s*\|")
 
     for line in lines:
         match = pattern.match(line)
@@ -110,9 +104,10 @@ def extract_site_type_used_util(filename):
             site_type = match.group(1).strip()
             used = int(match.group(2).strip())
             util = float(match.group(3).strip())
-            site_data[site_type] = {'Used': used, 'Util%': util}
+            site_data[site_type] = {"Used": used, "Util%": util}
 
     return site_data
+
 
 def get_bram_uram_util(filename):
     site_data = extract_site_type_used_util(filename)
@@ -120,15 +115,28 @@ def get_bram_uram_util(filename):
     uram_util = site_data.get("URAM", {}).get("Util%", 0.0)
     return {"bram": bram_util, "uram": uram_util}
 
+
 def getResources(trial):
-    _, mg, mlp = get_params(trial)
+    params, mg, mlp = get_params(trial)
+    dump_param(trial.number, params)
     writeTrialNumber(trial.number)
-    # os.system(f'vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl')
-    bram_utils = get_bram_uram_util(f'{Path.cwd()}/resources/util_{trial.number}.txt')
-    clb_luts = extract_site_type_used_util(f'{Path.cwd()}/resources/util_{trial.number}.txt')
-    out = clb_luts['CLB LUTs*']['Util%'] + clb_luts['CLB Registers']['Util%'] + clb_luts['CARRY8']['Util%'] + bram_utils['bram'] + bram_utils['uram']
-    write_value(trial.number, 'resource_score', out)
+    os.system(
+        f"vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl"
+    )
+    bram_utils = get_bram_uram_util(f"{Path.cwd()}/resources/util_{trial.number}.txt")
+    clb_luts = extract_site_type_used_util(
+        f"{Path.cwd()}/resources/util_{trial.number}.txt"
+    )
+    out = (
+        clb_luts["CLB LUTs*"]["Util%"]
+        + clb_luts["CLB Registers"]["Util%"]
+        + clb_luts["CARRY8"]["Util%"]
+        + bram_utils["bram"]
+        + bram_utils["uram"]
+    )
+    write_value(trial.number, "resource_score", out)
     return out
+
 
 def getAccuracy(trial):
     params, mg, mlp = get_params(trial)
@@ -138,7 +146,7 @@ def getAccuracy(trial):
     total_mse = 0.0
 
     for _ in range(100):
-        x = torch.randn(params['batches'], mg.model[0].in_features)  # Generate random input
+        x = torch.randn(params["batches"], mg.model[0].in_features)
         y1 = quantized(x)
         y2 = mlp(x)
         mse = criterion(y1, y2)
@@ -146,7 +154,7 @@ def getAccuracy(trial):
 
     avg_mse = total_mse / 100
 
-    write_value(trial.number, 'avg_mse', avg_mse)
+    write_value(trial.number, "avg_mse", avg_mse)
     return avg_mse
 
 
@@ -156,22 +164,26 @@ def main():
     study = optuna.create_study(
         directions=["minimize", "minimize"],
         study_name="resource_accuracy_optimiser",
-        sampler=sampler
+        sampler=sampler,
     )
 
     study.optimize(
         lambda trial: (getResources(trial), getAccuracy(trial)),
-        n_trials=1,
-        timeout=60*60*24,
-        n_jobs=1
+        n_trials=10,
+        timeout=60 * 60 * 24,
+        n_jobs=1,
     )
 
     print("Best trials:")
     for trial in study.best_trials:
         print(f"Trial {trial.number}: {trial.values}")
 
-if __name__ == '__main__':
-    write_value(0, "avg_msg", 0.1234)
-    write_value(0, "new_metric", 0.5678)
-    write_value(1, "avg_msg", 0.4321)
-    # main()
+
+if __name__ == "__main__":
+
+    try:
+        os.mkdir(f"{Path.cwd()}/resources/")
+    except:
+        pass
+
+    main()
