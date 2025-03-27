@@ -4,7 +4,8 @@ import random
 import os, sys, logging, traceback, pdb
 from chop.passes.graph.analysis.report.report_node import report_node_type_analysis_pass
 import pytest
-import toml
+import toml, json
+import xml.etree.ElementTree as ET
 
 import torch
 import torch.nn as nn
@@ -27,6 +28,7 @@ logger = get_logger(__name__)
 #   Model specifications
 #   prefer small models for fast test
 # --------------------------------------------------
+# ---------------------------------------------------
 class MLP(torch.nn.Module):
     def __init__(self, features: list[int]) -> None:
         super().__init__()
@@ -43,14 +45,14 @@ class MLP(torch.nn.Module):
         return self.model(x)
 
 
-def test_emit_verilog_mxint_mlp(seed: int = 10):
+def test_emit_verilog_mxint_mlp(seed: int = 10, kwargs : dict = {}):
     torch.manual_seed(seed)
     random.seed(seed)
 
     block_size = random.randint(2, 10)
     batch_parallelism = random.randint(2, 10)
-    mlp_depth = random.randint(1, 10)
-    mlp_features = [block_size * random.randint(1, 10) for _ in range(mlp_depth + 1)]
+    mlp_depth = 3 if kwargs['thor'] else random.randint(1, 10)
+    mlp_features = [128 if kwargs['thor'] else block_size * random.randint(1, 10) for _ in range(mlp_depth + 1)]
 
     params = {
         "seed": seed,
@@ -68,7 +70,12 @@ def test_emit_verilog_mxint_mlp(seed: int = 10):
         f"{block_size=}, {batch_parallelism=}, {params['e_width']=}, {params['m_width']=}, {params['batches']=}"
     )
 
-    shared_emit_verilog_mxint(mlp, input_shape, params)
+    params.update(kwargs)
+    params['num_batches'] = 1
+
+    logger.info(params)
+
+    shared_emit_verilog_mxint(mlp, input_shape, params, kwargs['thor'])
 
 
 def test_emit_verilog_mxint_linear(seed: int = 10):
@@ -145,8 +152,8 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True
     }
 
     mg, _ = passes.quantize_transform_pass(mg, quan_args)
-    _ = report_node_type_analysis_pass(mg)
-    mg, _ = passes.report_node_meta_param_analysis_pass(mg)
+    # _ = report_node_type_analysis_pass(mg)
+    # mg, _ = passes.report_node_meta_param_analysis_pass(mg)
 
     # Parallelism adjustments
     for node in mg.fx_graph.nodes:
@@ -181,7 +188,7 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True
         mg, _ = passes.emit_cocotb_transform_pass(
             mg,
             pass_args={
-                "wait_time": 10 * block_size * batch_parallelism * num_batches,
+                "wait_time": 10000 * block_size * batch_parallelism * num_batches,
                 "wait_unit": "us",
                 "num_batches": num_batches,
             },
@@ -194,6 +201,18 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True
             waves=True,
         )
 
+        tree = ET.parse(f'{Path.cwd()}/sim_build/results.xml')
+        root = tree.getroot()
+
+        sim_time_ns = None
+        for testcase in root.findall(".//testcase"):
+            sim_time_ns = testcase.attrib.get("sim_time_ns")
+            if sim_time_ns:
+                break  # Exit the loop once the value is found
+
+        with open("thor.csv", "a") as f:
+            f.write(f"{params['seed']}, {block_size}, {batch_parallelism}, {float(sim_time_ns) / 1000. }\n")
+
     logger.info(
         f"{block_size=}, {batch_parallelism=}, {m_width=}, {e_width=}, {batches=}"
     )
@@ -203,12 +222,26 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True
 
 if __name__ == "__main__":
     seed = os.getenv("COCOTB_SEED")
-    if seed is None:
-        seed = random.randrange(sys.maxsize)
-        logger.info(f"Generated {seed=}")
+    thor = os.getenv("THOR")
+    if thor is None:
+        if seed is None:
+            seed = random.randrange(sys.maxsize)
+            logger.info(f"Generated {seed=}")
+        else:
+            seed = int(seed)
+            logger.info(f"Using provided {seed=}")
+        # test_emit_verilog_mxint_linear(seed)
+        test_emit_verilog_mxint_mlp(seed)
+        logger.info(f"{seed=}")
     else:
-        seed = int(seed)
-        logger.info(f"Using provided {seed=}")
-    # test_emit_verilog_mxint_linear(seed)
-    test_emit_verilog_mxint_mlp(seed)
-    logger.info(f"{seed=}")
+        config = {}
+
+        with open("output.json", "r") as f:
+            config = json.load(f)
+
+        with open("thor.csv", "w") as f:
+            f.write("seed,block_size,batch_parallelism,time\n")
+
+        for key, val in config.items():
+            val['thor'] = 1
+            test_emit_verilog_mxint_mlp(kwargs=val)
