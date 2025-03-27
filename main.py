@@ -41,7 +41,7 @@ print(df_filtered['avg_bw'])
 
 # Plot
 plt.figure(figsize=(8, 6))
-plt.step(pareto_df["resource_score"], pareto_df["accuracy"], linestyle='--', color='red', label="Pareto Front")
+plt.step(pareto_df["resource_score"], pareto_df["accuracy"], linestyle='--', color='red', label="Pareto Front", where='post')
 scatter = plt.scatter(df_filtered["resource_score"], df_filtered["accuracy"],s=10 * df_filtered['group'],
                       c=df_filtered["avg_bw"], cmap="viridis", edgecolors="black")
 
