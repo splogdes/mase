@@ -1,7 +1,7 @@
 import os, re, random
 import optuna
 from optuna import study
-from optuna.samplers import TPESampler, GridSampler
+from optuna.samplers import TPESampler, GridSampler, RandomSampler
 import json
 from chop.tools.logger import set_logging_verbosity
 from chop.tools import get_logger
@@ -54,13 +54,22 @@ def write_value(trial_number, name, value, filename="output.json"):
     with open(filename, "w") as file:
         json.dump(data, file, indent=4)
 
+ss = {
+    "block_size": [2 ** i for i in range(1, 5)],
+    "batch_parallelism": [2 ** i for i in range(1, 5)],
+    "m_width": [i for i in range(4, 11)],
+    "e_width": [i for i in range(3, 11)],
+    "batches": [32],
+    "num_batches": [1],
+    "seed": [i for i in range(10)]
+}
 
 def get_params(trial):
 
     block_size = 2 ** trial.suggest_int("block_size", 1, 4)
     batch_parallelism = 2 ** trial.suggest_int("batch_parallelism", 1, 4)
     mlp_depth = 3
-    mlp_features = [128 for i in range(mlp_depth + 1)]
+    mlp_features = [32 for i in range(mlp_depth + 1)]
 
     params = {
         "seed": trial.number,
@@ -68,8 +77,8 @@ def get_params(trial):
         "batch_parallelism": batch_parallelism,
         "m_width": (m_width := trial.suggest_int("m_width", 4, 10)),
         "e_width": trial.suggest_int("e_width", 3, min(m_width - 1, 10)),
-        "batches": 128,
-        "num_batches": 10,
+        "batches": 32,
+        "num_batches": 1,
     }
 
     mlp = MLP(mlp_features)
@@ -79,7 +88,7 @@ def get_params(trial):
         f"{block_size=}, {batch_parallelism=}, {params['e_width']=}, {params['m_width']=}, {params['batches']=}"
     )
 
-    mg, mlp = shared_emit_verilog_mxint(mlp, input_shape, params, simulate=False)
+    mg, mlp = shared_emit_verilog_mxint(mlp, input_shape, params)
 
     return params, mg, mlp
 
@@ -120,9 +129,9 @@ def getResources(trial):
     params, mg, mlp = get_params(trial)
     dump_param(trial.number, params)
     writeTrialNumber(trial.number)
-    os.system(
-        f"vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl"
-    )
+    # os.system(
+        # f"vivado -mode batch -nolog -nojou -source {Path.cwd()}/test/passes/graph/transforms/verilog/generate.tcl"
+    # )
     bram_utils = get_bram_uram_util(f"{Path.cwd()}/resources/util_{trial.number}.txt")
     clb_luts = extract_site_type_used_util(
         f"{Path.cwd()}/resources/util_{trial.number}.txt"
@@ -159,25 +168,25 @@ def getAccuracy(trial):
 
 
 def main():
-    sampler = TPESampler()
+    sampler = RandomSampler()
 
     study = optuna.create_study(
-        directions=["minimize", "minimize"],
+        direction="minimize",
         study_name="resource_accuracy_optimiser",
         sampler=sampler,
     )
 
     study.optimize(
-        lambda trial: (getResources(trial), getAccuracy(trial)),
-        n_trials=10,
+        getAccuracy,
+        n_trials=100,
         timeout=60 * 60 * 24,
         n_jobs=1,
     )
 
     print("Best trials:")
+
     for trial in study.best_trials:
         print(f"Trial {trial.number}: {trial.values}")
-
 
 if __name__ == "__main__":
 
@@ -185,5 +194,8 @@ if __name__ == "__main__":
         os.mkdir(f"{Path.cwd()}/resources/")
     except:
         pass
+
+    with open("thor.csv", "w") as f:
+        f.write("seed,block_size,batch_parallelism,m_width,e_width,acc,time\n")
 
     main()

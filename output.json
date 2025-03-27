@@ -8,7 +8,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 1836.16,
-        "avg_mse": 7.48614229814848e-05
+        "avg_mse": 0.0010618502623401583
     },
     "1": {
         "seed": 1,
@@ -19,7 +19,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 36.47,
-        "avg_mse": 0.0003606386465253308
+        "avg_mse": 0.00011774859769502654
     },
     "2": {
         "seed": 2,
@@ -30,7 +30,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 3544.3500000000004,
-        "avg_mse": 6.549248669216468e-06
+        "avg_mse": 1.0717995646700729e-05
     },
     "3": {
         "seed": 3,
@@ -41,7 +41,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 511.04,
-        "avg_mse": 4.988832879462279e-06
+        "avg_mse": 1.907047041640908e-05
     },
     "4": {
         "seed": 4,
@@ -52,7 +52,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 429.34,
-        "avg_mse": 0.00028060937009286133
+        "avg_mse": 4.2563384158711415e-06
     },
     "5": {
         "seed": 5,
@@ -63,7 +63,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 24.89,
-        "avg_mse": 0.0038411001791246236
+        "avg_mse": 0.0058574770065024494
     },
     "6": {
         "seed": 6,
@@ -74,7 +74,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 18.58,
-        "avg_mse": 0.001628937799250707
+        "avg_mse": 8.839639922371134e-05
     },
     "7": {
         "seed": 7,
@@ -85,7 +85,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 38.71,
-        "avg_mse": 0.0043680327478796245
+        "avg_mse": 0.0003163279881118797
     },
     "8": {
         "seed": 8,
@@ -96,7 +96,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 135.03,
-        "avg_mse": 0.0014552610274404286
+        "avg_mse": 0.002463889718055725
     },
     "9": {
         "seed": 9,
@@ -107,7 +107,7 @@
         "batches": 128,
         "num_batches": 10,
         "resource_score": 42.67,
-        "avg_mse": 6.774596126888355e-06
+        "avg_mse": 0.00019977601536083967
     },
     "10": {
         "seed": 10,

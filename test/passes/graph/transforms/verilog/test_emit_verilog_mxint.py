@@ -113,6 +113,21 @@ def test_emit_verilog_mxint_linear(seed: int = 10):
 
     shared_emit_verilog_mxint(linear, input_shape, params)
 
+def getAccuracy(mg: chop.MaseGraph, mlp: torch.nn.Module, params: dict):
+
+    criterion = nn.MSELoss()
+    total_mse = 0.0
+
+    for _ in range(100):
+        x = torch.randn(params["batches"], mg.model[0].in_features)
+        y1 = quantized(x)
+        y2 = mlp(x)
+        mse = criterion(y1, y2)
+        total_mse += mse.item()
+
+    avg_mse = total_mse / 100
+
+    return avg_mse
 
 def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True):
     # Set seeds
@@ -210,8 +225,23 @@ def shared_emit_verilog_mxint(model, input_shape, params: dict, sim: bool = True
             if sim_time_ns:
                 break  # Exit the loop once the value is found
 
+        quantized = mg.model
+
+        criterion = nn.MSELoss()
+        total_mse = 0.0
+
+        for _ in range(100):
+            x = torch.randn((batches, *input_shape))
+            y1 = quantized(x)
+            y2 = model(x)
+            mse = criterion(y1, y2)
+            total_mse += mse.item()
+
+        avg_mse = total_mse / 100
+
         with open("thor.csv", "a") as f:
-            f.write(f"{params['seed']}, {block_size}, {batch_parallelism}, {float(sim_time_ns) / 1000. }\n")
+            # f.write("seed,block_size,batch_parallelism,m_width,e_width,acc,time\n")
+            f.write(f"{params['seed']}, {block_size}, {batch_parallelism},{m_width}, {e_width}, {avg_mse}, {float(sim_time_ns) / 1000. }\n")
 
     logger.info(
         f"{block_size=}, {batch_parallelism=}, {m_width=}, {e_width=}, {batches=}"
@@ -240,7 +270,7 @@ if __name__ == "__main__":
             config = json.load(f)
 
         with open("thor.csv", "w") as f:
-            f.write("seed,block_size,batch_parallelism,time\n")
+            f.write("seed,block_size,batch_parallelism,m_width,e_width,acc,time\n")
 
         for key, val in config.items():
             val['thor'] = 1
