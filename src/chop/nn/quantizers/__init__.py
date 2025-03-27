@@ -8,6 +8,7 @@ from .log import log_quantizer
 from .minifloat import minifloat_denorm_quantizer, minifloat_ieee_quantizer
 from .quantizers_for_hw import integer_quantizer_for_hw, integer_floor_quantizer_for_hw
 from .mxint import mxint_quantizer
+from .mxint_old import mxint_old_quantizer
 
 quantizer_map = {
     "log": log_quantizer,
