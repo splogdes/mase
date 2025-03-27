@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 # Load the JSON data
-
 with open("output.json", "r") as file:
     json_data = json.load(file)
 
@@ -12,7 +11,6 @@ data = json_data
 
 # Convert to DataFrame
 df = pd.DataFrame(data).T
-print(df)
 
 # Calculate accuracy
 df["accuracy"] = df["avg_mse"]
@@ -26,7 +24,7 @@ df_filtered["group"] = df_filtered["block_size"] * df_filtered["batch_parallelis
 # Sort by resource_score and accuracy for Pareto front calculation
 df_filtered = df_filtered.sort_values(by=["resource_score", "accuracy"], ascending=[True, False])
 
-# Pareto front: A point is Pareto-optimal if no other point has both higher accuracy and lower resource score
+# Pareto front calculation
 pareto_points = []
 current_best_acc = np.inf
 
@@ -37,13 +35,17 @@ for _, row in df_filtered.iterrows():
 
 pareto_df = pd.DataFrame(pareto_points)
 
+df_filtered['avg_bw'] = (df_filtered["e_width"] + df_filtered["m_width"] * df_filtered["group"]) / df_filtered["group"]
+
+print(df_filtered['avg_bw'])
+
 # Plot
 plt.figure(figsize=(8, 6))
-scatter = plt.scatter(df_filtered["resource_score"], df_filtered["accuracy"],
-                       c=df_filtered["group"], cmap="viridis", edgecolors="black", label="Configurations")
+plt.step(pareto_df["resource_score"], pareto_df["accuracy"], linestyle='--', color='red', label="Pareto Front")
+scatter = plt.scatter(df_filtered["resource_score"], df_filtered["accuracy"],s=10 * df_filtered['group'],
+                      c=df_filtered["avg_bw"], cmap="viridis", edgecolors="black")
 
 # Plot Pareto front
-plt.plot(pareto_df["resource_score"], pareto_df["accuracy"], linestyle='--', color='red', label="Pareto Front")
 
 # Labels and legend
 plt.xlabel("Resource Score")
@@ -51,7 +53,7 @@ plt.ylabel("MSE")
 plt.yscale('log')
 plt.title("MSE vs. Resource Score")
 plt.legend()
-plt.colorbar(scatter, label="Block Size")
+plt.colorbar(scatter, label="Average Bitwidth")
 plt.grid(True, "major")
 
 # Show plot
