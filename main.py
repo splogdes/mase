@@ -15,7 +15,7 @@ df = pd.DataFrame(data).T
 print(df)
 
 # Calculate accuracy
-df["accuracy"] = 1 - df["avg_mse"]
+df["accuracy"] = df["avg_mse"]
 
 # Filter resource_score < 100
 df_filtered = df[df["resource_score"] < 100].copy()
@@ -28,10 +28,10 @@ df_filtered = df_filtered.sort_values(by=["resource_score", "accuracy"], ascendi
 
 # Pareto front: A point is Pareto-optimal if no other point has both higher accuracy and lower resource score
 pareto_points = []
-current_best_acc = -np.inf
+current_best_acc = np.inf
 
 for _, row in df_filtered.iterrows():
-    if row["accuracy"] > current_best_acc:
+    if row["accuracy"] < current_best_acc:
         pareto_points.append(row)
         current_best_acc = row["accuracy"]
 
@@ -47,11 +47,12 @@ plt.plot(pareto_df["resource_score"], pareto_df["accuracy"], linestyle='--', col
 
 # Labels and legend
 plt.xlabel("Resource Score")
-plt.ylabel("Accuracy (1 - avg_mse)")
-plt.title("Accuracy vs. Resource Score")
+plt.ylabel("MSE")
+plt.yscale('log')
+plt.title("MSE vs. Resource Score")
 plt.legend()
-plt.colorbar(scatter, label="Block Size × Batch Parallelism")
-plt.grid(True)
+plt.colorbar(scatter, label="Block Size")
+plt.grid(True, "major")
 
 # Show plot
 plt.show()
